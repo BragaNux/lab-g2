@@ -181,3 +181,63 @@ def play_history(
     if challenge.date >= get_local_date():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Use /today para o desafio do dia.")
     return submit_history_answer(str(current_user.id), challenge, body.answer, db)
+
+
+@router.post("/history/{challenge_id}/hint", response_model=HintResponse)
+@limiter.limit("3/minute")
+def history_hint(
+    challenge_id: str,
+    request: Request,
+    current_user: User = Depends(require_premium),
+    db: Session = Depends(get_db),
+):
+    challenge = get_challenge_by_id(challenge_id, db)
+    if challenge.date >= get_local_date():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Use /today para o desafio do dia.")
+
+    game = db.query(Game).filter(
+        Game.user_id == current_user.id,
+        Game.challenge_id == challenge.id,
+    ).first()
+
+    limit = settings.hint_limit_premium
+    current_hints = game.hint_count if game else 0
+
+    if current_hints >= limit:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Limite de {limit} dica(s) atingido para este desafio.",
+        )
+
+    if not game:
+        game = Game(
+            user_id=current_user.id,
+            challenge_id=challenge.id,
+            used_hint=True,
+            hint_count=1,
+            is_history_play=True,
+        )
+        db.add(game)
+    else:
+        game.used_hint = True
+        game.hint_count = current_hints + 1
+
+    db.commit()
+
+    if not current_user.allow_ai:
+        from app.models.book import Book
+        book = db.query(Book).filter(Book.id == challenge.passage.book_id).first()
+        if book:
+            lang_map = {"pt": "Português", "en": "Inglês", "es": "Espanhol", "fr": "Francês", "de": "Alemão", "it": "Italiano", "ru": "Russo"}
+            lang_name = lang_map.get(book.language, book.language)
+            hint_text = f"DICA OFFLINE: Obra publicada em {book.year}, escrita originalmente em {lang_name}."
+        else:
+            hint_text = "Dica offline: sem informações do livro."
+    else:
+        hint_text = generate_hint(
+            passage_text=challenge.passage.text,
+            book_id=str(challenge.passage.book_id),
+            db=db,
+        )
+    return HintResponse(hint=hint_text)
+

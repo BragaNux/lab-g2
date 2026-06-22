@@ -84,18 +84,30 @@ def submit_answer(user_id: str, challenge: DailyChallenge, answer: str, used_hin
 
 
 def submit_history_answer(user_id: str, challenge: DailyChallenge, answer: str, db: Session) -> dict:
+    existing = (
+        db.query(Game)
+        .filter(Game.user_id == user_id, Game.challenge_id == challenge.id)
+        .first()
+    )
     is_correct = evaluate_answer(answer, challenge.passage.book.title)
 
-    game = Game(
-        user_id=user_id,
-        challenge_id=challenge.id,
-        answer=answer,
-        is_correct=is_correct,
-        used_hint=False,
-        points_earned=0,
-        is_history_play=True,
-    )
-    db.add(game)
+    if not existing:
+        game = Game(
+            user_id=user_id,
+            challenge_id=challenge.id,
+            answer=answer,
+            is_correct=is_correct,
+            used_hint=False,
+            points_earned=0,
+            is_history_play=True,
+        )
+        db.add(game)
+    else:
+        existing.answer = answer
+        existing.is_correct = is_correct
+        existing.points_earned = 0
+        existing.is_history_play = True
+        
     db.commit()
 
     return {

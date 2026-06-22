@@ -149,8 +149,12 @@ export function PassageCard({ challenge, mode = "today" }: Props) {
                 >
                   Confirmar Resposta
                 </Button>
-                {mode === "today" && !hint && (
-                  <HintButton onHintReceived={setHint} disabled={loading} />
+                {!hint && (
+                  <HintButton
+                    url={mode === "history" ? `/challenge/history/${challenge.id}/hint` : "/challenge/today/hint"}
+                    onHintReceived={setHint}
+                    disabled={loading}
+                  />
                 )}
               </div>
               <p className="text-xs text-muted-foreground text-center">

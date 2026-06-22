@@ -8,9 +8,10 @@ import { Lightbulb, Loader2 } from "lucide-react"
 interface Props {
   onHintReceived: (hint: string) => void
   disabled?: boolean
+  url?: string
 }
 
-export function HintButton({ onHintReceived, disabled }: Props) {
+export function HintButton({ onHintReceived, disabled, url = "/challenge/today/hint" }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
@@ -18,7 +19,7 @@ export function HintButton({ onHintReceived, disabled }: Props) {
     setLoading(true)
     setError("")
     try {
-      const res = await api.post("/challenge/today/hint")
+      const res = await api.post(url)
       onHintReceived(res.data.hint)
     } catch (err: any) {
       setError(err.response?.data?.detail || "Não foi possível obter dica.")

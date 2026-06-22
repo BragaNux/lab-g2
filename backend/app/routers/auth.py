@@ -28,6 +28,9 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
         username=body.username,
         email=body.email,
         password_hash=hash_password(body.password),
+        is_premium=False,
+        allow_ai=False,
+        is_admin=False,
     )
     db.add(user)
     db.commit()
