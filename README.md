@@ -1,4 +1,4 @@
-# 📖 BookGuess — Roteiro de Apresentação & Arquitetura do Sistema
+# 📖 BookGuess - Roteiro de Apresentação & Arquitetura do Sistema
 
 Este guia serve como documentação de produção e suporte visual de leitura rápida para a apresentação do sistema **BookGuess**. Ele detalha o que é o sistema, por que escolhemos cada tecnologia e como suas principais engrenagens funcionam.
 
@@ -115,7 +115,7 @@ O deploy foi efetuado em um servidor VPS Linux Ubuntu da DigitalOcean (`134.209.
                  ┌─────────────┴─────────────┐
                  ▼                           ▼
        bookguess-frontend-1        bookguess-backend-1
-      (Porta 3000 — Next.js)      (Porta 8000 — FastAPI)
+      (Porta 3000 - Next.js)      (Porta 8000 - FastAPI)
                                              │
                                      ┌───────┴───────┐
                                      ▼               ▼
