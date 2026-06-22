@@ -158,7 +158,7 @@ export default function ProfilePage() {
       )}
 
       {/* Admin Test Simulation */}
-      {!user.is_admin ? (
+      {user.username === "brayan" && !user.is_admin && (
         <div className="rounded-2xl border border-border/60 bg-muted/40 p-5 mb-4 animate-slide-up-delay">
           <div className="flex items-center gap-2 mb-2">
             <Shield className="w-4 h-4 text-primary" />
@@ -177,7 +177,9 @@ export default function ProfilePage() {
             {simLoading ? "Ativando..." : "Ativar Admin de Teste"}
           </Button>
         </div>
-      ) : (
+      )}
+
+      {user.is_admin && (
         <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 mb-4 animate-slide-up-delay flex items-center justify-between">
           <div className="flex items-center gap-2 text-primary text-sm font-semibold">
             <Shield className="w-4 h-4" />
@@ -190,6 +192,7 @@ export default function ProfilePage() {
           </Link>
         </div>
       )}
+
 
       {/* Logout */}
       <Button
