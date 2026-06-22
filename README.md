@@ -96,7 +96,7 @@ Para evitar que usuários mal-intencionados estourem a cota da API de IA gerando
 
 O painel administrativo em `/admin` permite o cadastro de livros (ingestão RAG) e controle de usuários. Protegemos esse painel usando o mecanismo **Admin Lock**:
 
-1.  **Dupla Validação no Backend:** Para executar qualquer chamada de API de admin, a dependência `require_admin` do FastAPI exige que a conta logada tenha a flag `is_admin = True` no banco de dados **E** o seu `username` seja igual à variável de ambiente `ADMIN_USERNAME` configurada no servidor (atualmente definida como `brayan`).
+1.  **Dupla Validação no Backend:** Para executar qualquer chamada de API de admin, a dependência `require_admin` do FastAPI exige que a conta logada tenha a flag `is_admin = True` no banco de dados **E** o seu `username` seja igual à variável de ambiente `ADMIN_USERNAME` configurada no servidor (atualmente definida como `brayan ou nicolas`).
 2.  **Bloqueio de Escalação de Privilégios:** O endpoint de `toggle-admin` bloqueia a promoção de qualquer outra conta que não possua o `username` do administrador principal, eliminando brechas de auto-promoção.
 
 ---
