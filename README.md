@@ -4,7 +4,7 @@ Este guia serve como documentação de produção e suporte visual de leitura r�
 
 ---
 
-## 📌 Guia de Consulta Rápida (Para ler durante a apresentação)
+## 📌 Guia de Consulta Rápida
 
 | Pergunta / Dúvida | O que responder diretamente |
 | :--- | :--- |
