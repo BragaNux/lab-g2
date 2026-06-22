@@ -118,10 +118,10 @@ export default function ProfilePage() {
         <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 mb-4 animate-slide-up-delay">
           <div className="flex items-center gap-2 mb-2">
             <Crown className="w-4 h-4 text-primary" />
-            <h3 className="font-semibold text-sm">Plano Premium Simulado</h3>
+            <h3 className="font-semibold text-sm">Plano Premium</h3>
           </div>
           <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
-            Acesso ao histórico completo de desafios, 3 dicas por partida e muito mais.
+            Desbloqueie o histórico completo de desafios, até 3 dicas por partida e acesso antecipado a novas funcionalidades.
           </p>
           <Button
             onClick={handleSimulatePremium}
@@ -130,14 +130,14 @@ export default function ProfilePage() {
             size="sm"
           >
             {simLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Crown className="w-4 h-4" />}
-            {simLoading ? "Ativando…" : "Ativar Premium Simulado"}
+            {simLoading ? "Ativando..." : "Solicitar Premium"}
           </Button>
         </div>
       ) : (
         <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 mb-4 animate-slide-up-delay">
           <div className="flex items-center gap-2 text-primary text-sm font-semibold">
             <Crown className="w-4 h-4" />
-            Premium ativo — aproveite todos os recursos!
+            Conta Premium ativa. Aproveite todos os recursos!
           </div>
         </div>
       )}
