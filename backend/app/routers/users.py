@@ -14,7 +14,7 @@ def simulate_premium(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    current_user.is_premium = True
+    current_user.premium_requested = True
     db.commit()
     db.refresh(current_user)
     return current_user

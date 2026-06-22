@@ -7,6 +7,7 @@ export interface User {
   is_premium: boolean
   is_admin: boolean
   allow_ai: boolean
+  premium_requested: boolean
 }
 
 

@@ -58,10 +58,10 @@ def require_premium(current_user: User = Depends(get_current_user)) -> User:
 
 
 def require_admin(current_user: User = Depends(get_current_user)) -> User:
-    if not current_user.is_admin or current_user.username != settings.admin_username:
+    if not current_user.is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Acesso negado. Apenas o administrador principal é permitido.",
+            detail="Acesso negado. Apenas administradores são permitidos.",
         )
     return current_user
 

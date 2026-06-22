@@ -9,6 +9,9 @@ def init():
         conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         conn.commit()
     Base.metadata.create_all(bind=engine)
+    with engine.connect() as conn:
+        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS premium_requested BOOLEAN DEFAULT FALSE"))
+        conn.commit()
     print("Banco inicializado com sucesso.")
 
 

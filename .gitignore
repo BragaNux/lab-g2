@@ -38,4 +38,5 @@ backend/uploads/
 # Deploy & Scratch files
 bookguess.tar
 scratch/
+pending_tasks.md
 

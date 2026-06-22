@@ -7,8 +7,9 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Shield, Brain, Crown, Award, BookPlus, FileText, CalendarPlus, Users, RefreshCw, Flame, Trash2 } from "lucide-react"
+import { Loader2, Shield, Brain, Crown, Award, BookPlus, FileText, CalendarPlus, Users, RefreshCw, Flame, Trash2, CheckCircle2, XCircle } from "lucide-react"
 import type { User } from "@/types"
+
 
 
 type Tab = "ingest" | "passage" | "challenge" | "users"
@@ -24,7 +25,16 @@ export default function AdminPage() {
   const router = useRouter()
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
-  const [tab, setTab] = useState<Tab>("users")
+  const [tab, setTab] = useState<Tab>(() => {
+    if (typeof window !== "undefined") {
+      const saved = sessionStorage.getItem("admin_active_tab")
+      if (saved && ["ingest", "passage", "challenge", "users"].includes(saved)) {
+        return saved as Tab
+      }
+    }
+    return "users"
+  })
+  const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null)
 
   useEffect(() => {
     if (!isLoggedIn()) { router.push("/login"); return }
@@ -32,6 +42,40 @@ export default function AdminPage() {
       .then((res) => { setCurrentUser(res.data); setAuthLoading(false) })
       .catch(() => setAuthLoading(false))
   }, [router])
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const pending = sessionStorage.getItem("admin_notification")
+      if (pending) {
+        try {
+          const parsed = JSON.parse(pending)
+          setNotification(parsed)
+        } catch (e) {}
+        sessionStorage.removeItem("admin_notification")
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("admin_active_tab", tab)
+    }
+  }, [tab])
+
+  useEffect(() => {
+    if (!notification) return
+    const t = setTimeout(() => setNotification(null), 4000)
+    return () => clearTimeout(t)
+  }, [notification])
+
+  function triggerNotification(message: string, type: "success" | "error" = "success") {
+    if (type === "success") {
+      sessionStorage.setItem("admin_notification", JSON.stringify({ type, message }))
+      window.location.reload()
+    } else {
+      setNotification({ type, message })
+    }
+  }
 
   if (authLoading) {
     return (
@@ -64,7 +108,19 @@ export default function AdminPage() {
   const ActiveTab = TABS.find((t) => t.id === tab)!
 
   return (
-    <main className="min-h-[calc(100vh-56px)] px-4 py-8 max-w-6xl mx-auto space-y-6">
+    <main className="min-h-[calc(100vh-56px)] px-4 py-8 max-w-6xl mx-auto space-y-6 relative">
+      {/* Top Floating Toast Notification */}
+      {notification && (
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-xl shadow-lg border animate-scale-in flex items-center gap-2.5 max-w-sm ${
+          notification.type === "success"
+            ? "bg-emerald-950/95 border-emerald-500/30 text-emerald-400 glow-emerald"
+            : "bg-red-950/95 border-destructive/30 text-destructive animate-shake"
+        }`}>
+          {notification.type === "success" ? <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-400" /> : <XCircle className="w-5 h-5 shrink-0 text-destructive" />}
+          <span className="text-sm font-semibold">{notification.message}</span>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-border/50 pb-5">
         <div className="w-10 h-10 rounded-xl bg-primary/15 border border-primary/20 flex items-center justify-center shrink-0">
@@ -96,16 +152,17 @@ export default function AdminPage() {
 
       {/* Tab content */}
       <div className="animate-fade-in">
-        {tab === "ingest"    && <IngestForm />}
-        {tab === "passage"   && <PassageForm />}
+        {tab === "ingest"    && <IngestForm onNotify={triggerNotification} />}
+        {tab === "passage"   && <PassageForm onNotify={triggerNotification} />}
         {tab === "challenge" && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <ChallengeForm />
-            <ResetChallengeBox />
+            <ChallengeForm onNotify={triggerNotification} />
+            <ResetChallengeBox onNotify={triggerNotification} />
           </div>
         )}
-        {tab === "users"     && <UsersManagement currentUser={currentUser} />}
+        {tab === "users"     && <UsersManagement currentUser={currentUser} onNotify={triggerNotification} />}
       </div>
+
 
     </main>
   )
@@ -125,10 +182,9 @@ function Panel({ title, description, children }: { title: string; description: s
 }
 
 /* ───── Ingest Form ───── */
-function IngestForm() {
+function IngestForm({ onNotify }: { onNotify: (msg: string, type?: "success" | "error") => void }) {
   const [file, setFile] = useState<File | null>(null)
   const [fields, setFields] = useState({ title: "", author: "", year: "", language: "pt" })
-  const [result, setResult] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
@@ -137,15 +193,16 @@ function IngestForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!file) return
-    setLoading(true); setError(""); setResult(null)
+    setLoading(true); setError("")
     const form = new FormData()
     form.append("file", file)
     Object.entries(fields).forEach(([k, v]) => { if (v) form.append(k, v) })
     try {
       const res = await api.post("/admin/books/ingest", form)
-      setResult(`Livro ingerido com sucesso! ID: ${res.data.book_id} | ${res.data.chunks_created} chunks criados.`)
+      onNotify(`Livro "${fields.title}" ingerido com sucesso! (${res.data.chunks_created} chunks criados)`)
     } catch (err: any) {
       setError(err.response?.data?.detail || "Erro ao ingerir livro.")
+      onNotify(err.response?.data?.detail || "Erro ao ingerir livro.", "error")
     } finally { setLoading(false) }
   }
 
@@ -165,7 +222,6 @@ function IngestForm() {
           <Input placeholder="Idioma: pt, en, es..." value={fields.language} onChange={(e) => set("language", e.target.value)} />
         </div>
         {error  && <p className="text-sm text-destructive font-medium bg-destructive/10 rounded-lg px-3 py-2">{error}</p>}
-        {result && <p className="text-sm text-green-500 font-medium bg-green-500/10 rounded-lg px-3 py-2">{result}</p>}
         <Button type="submit" disabled={loading} className="w-full sm:w-auto h-11 px-8">
           {loading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Ingerindo...</> : "Ingerir Livro"}
         </Button>
@@ -175,9 +231,8 @@ function IngestForm() {
 }
 
 /* ───── Passage Form ───── */
-function PassageForm() {
+function PassageForm({ onNotify }: { onNotify: (msg: string, type?: "success" | "error") => void }) {
   const [fields, setFields] = useState({ book_id: "", text: "", difficulty: "3" })
-  const [result, setResult] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
@@ -185,16 +240,17 @@ function PassageForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setLoading(true); setError(""); setResult(null)
+    setLoading(true); setError("")
     try {
       const res = await api.post("/admin/passages", {
         book_id: fields.book_id,
         text: fields.text,
         difficulty: parseInt(fields.difficulty),
       })
-      setResult(res.data)
+      onNotify(`Trecho literário criado com sucesso! (${res.data.points} pts)`)
     } catch (err: any) {
       setError(err.response?.data?.detail || "Erro ao criar trecho.")
+      onNotify(err.response?.data?.detail || "Erro ao criar trecho.", "error")
     } finally { setLoading(false) }
   }
 
@@ -232,7 +288,6 @@ function PassageForm() {
           </div>
         </div>
         {error  && <p className="text-sm text-destructive font-medium bg-destructive/10 rounded-lg px-3 py-2">{error}</p>}
-        {result && <p className="text-sm text-green-500 font-medium bg-green-500/10 rounded-lg px-3 py-2">Trecho criado com sucesso! ID: {result.id} | {result.points} pts</p>}
         <Button type="submit" disabled={loading} className="w-full sm:w-auto h-11 px-8">
           {loading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Salvando...</> : "Criar Trecho"}
         </Button>
@@ -242,9 +297,8 @@ function PassageForm() {
 }
 
 /* ───── Challenge Form ───── */
-function ChallengeForm() {
+function ChallengeForm({ onNotify }: { onNotify: (msg: string, type?: "success" | "error") => void }) {
   const [fields, setFields] = useState({ passage_id: "", date: "" })
-  const [result, setResult] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
@@ -252,12 +306,15 @@ function ChallengeForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setLoading(true); setError(""); setResult(null)
+    setLoading(true); setError("")
     try {
       const res = await api.post("/admin/daily-challenges", fields)
-      setResult(res.data)
+      const dateParts = fields.date.split("-")
+      const formattedDate = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : fields.date
+      onNotify(`Desafio criado com sucesso para a data ${formattedDate}!`)
     } catch (err: any) {
       setError(err.response?.data?.detail || "Erro ao criar desafio.")
+      onNotify(err.response?.data?.detail || "Erro ao criar desafio.", "error")
     } finally { setLoading(false) }
   }
 
@@ -270,7 +327,6 @@ function ChallengeForm() {
           <Input type="date" value={fields.date} onChange={(e) => set("date", e.target.value)} required />
         </div>
         {error  && <p className="text-sm text-destructive font-medium bg-destructive/10 rounded-lg px-3 py-2">{error}</p>}
-        {result && <p className="text-sm text-green-500 font-medium bg-green-500/10 rounded-lg px-3 py-2">Desafio configurado para {result.date}! ID: {result.id}</p>}
         <Button type="submit" disabled={loading} className="w-full sm:w-auto h-11 px-8">
           {loading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Criando...</> : "Criar Desafio"}
         </Button>
@@ -280,23 +336,19 @@ function ChallengeForm() {
 }
 
 /* ───── Reset Challenge Box ───── */
-function ResetChallengeBox() {
+function ResetChallengeBox({ onNotify }: { onNotify: (msg: string, type?: "success" | "error") => void }) {
   const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<string | null>(null)
-  const [error, setError] = useState("")
 
   async function handleReset() {
-    if (!confirm("Tem certeza que deseja resetar o desafio de hoje? Isso apagará todas as tentativas jogadas por todos os usuários para o dia de hoje.")) {
+    if (typeof window !== "undefined" && !window.confirm("Tem certeza que deseja resetar o desafio de hoje? Isso apagará todas as tentativas jogadas por todos os usuários para o dia de hoje.")) {
       return
     }
     setLoading(true)
-    setError("")
-    setResult(null)
     try {
       const res = await api.post("/admin/challenges/today/reset")
-      setResult(res.data.message || "Desafio de hoje resetado com sucesso!")
+      onNotify(res.data.message || "Desafio de hoje resetado com sucesso!")
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Erro ao resetar desafio.")
+      onNotify(err.response?.data?.detail || "Erro ao resetar desafio.", "error")
     } finally {
       setLoading(false)
     }
@@ -304,10 +356,7 @@ function ResetChallengeBox() {
 
   return (
     <Panel title="Resetar Desafio de Hoje (Testes)" description="Apaga todas as tentativas de hoje no banco, subtrai o XP obtido hoje de quem jogou, decrementa a ofensiva e sorteia outro trecho do histórico para hoje (trocando suas datas). Útil para testar.">
-
       <div className="space-y-4 max-w-md">
-        {error  && <p className="text-sm text-destructive font-medium bg-destructive/10 rounded-lg px-3 py-2">{error}</p>}
-        {result && <p className="text-sm text-green-500 font-medium bg-green-500/10 rounded-lg px-3 py-2">{result}</p>}
         <Button onClick={handleReset} disabled={loading} variant="destructive" className="w-full sm:w-auto h-11 px-8 gap-2 bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-md transition-all">
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
           Resetar e Colocar Novo Desafio
@@ -317,8 +366,9 @@ function ResetChallengeBox() {
   )
 }
 
+
 /* ───── Users Management ───── */
-function UsersManagement({ currentUser }: { currentUser: User }) {
+function UsersManagement({ currentUser, onNotify }: { currentUser: User; onNotify: (msg: string, type?: "success" | "error") => void }) {
 
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
@@ -335,6 +385,7 @@ function UsersManagement({ currentUser }: { currentUser: User }) {
       setUsers(res.data)
     } catch {
       setError("Erro ao buscar lista de usuários.")
+      onNotify("Erro ao buscar lista de usuários.", "error")
     } finally { setLoading(false) }
   }
 
@@ -342,43 +393,57 @@ function UsersManagement({ currentUser }: { currentUser: User }) {
     setTogglingId(`${userId}-${type}`)
     try {
       const res = await api.post(`/admin/users/${userId}/toggle-${type}`)
-      setUsers((prev) => prev.map((u) => (u.id === userId ? res.data : u)))
+      const label = type === "ai" ? "IA" : type === "premium" ? "Premium" : "Admin"
+      onNotify(`Permissão de ${label} do usuário alterada com sucesso!`)
     } catch (err: any) {
-      alert(err.response?.data?.detail || "Erro ao alterar configurações do usuário.")
+      onNotify(err.response?.data?.detail || "Erro ao alterar configurações do usuário.", "error")
     } finally { setTogglingId(null) }
   }
 
   async function handleResetAll() {
-    if (!confirm("ATENÇÃO: Tem certeza que deseja resetar TODOS os usuários?")) {
+    if (typeof window !== "undefined" && !window.confirm("ATENÇÃO: Tem certeza que deseja resetar TODOS os usuários?")) {
       return
     }
-    if (!confirm("CONFIRMAÇÃO ADICIONAL: Isso apagará permanentemente o XP, as ofensivas, e todo o histórico de jogo de todos os usuários do sistema. Continuar?")) {
+    if (typeof window !== "undefined" && !window.confirm("CONFIRMAÇÃO ADICIONAL: Isso apagará permanentemente o XP, as ofensivas, e todo o histórico de jogo de todos os usuários do sistema. Continuar?")) {
       return
     }
     setLoading(true)
     setError("")
     try {
       await api.post("/admin/users/reset-stats")
-      await fetchUsers()
-      alert("Todos os usuários e o ranking foram resetados do zero!")
+      onNotify("Resetado tudo com sucesso!")
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Erro ao resetar usuários.")
+      onNotify(err.response?.data?.detail || "Erro ao resetar usuários.", "error")
     } finally {
       setLoading(false)
     }
   }
 
   async function handleResetUser(userId: string, username: string) {
-    if (!confirm(`Tem certeza que deseja resetar o usuário "${username}" do zero? Isso apagará seu XP, sua ofensiva e todas as suas tentativas de jogo.`)) {
+    if (typeof window !== "undefined" && !window.confirm(`Tem certeza que deseja resetar o usuário "${username}" do zero? Isso apagará seu XP, sua ofensiva e todas as suas tentativas de jogo.`)) {
       return
     }
     setTogglingId(`${userId}-reset`)
     try {
       await api.post(`/admin/users/reset-stats?user_id=${userId}`)
-      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, xp: 0, streak: 0 } : u))
-      alert(`Usuário ${username} foi resetado com sucesso!`)
+      onNotify("Usuário resetado com sucesso!")
     } catch (err: any) {
-      alert(err.response?.data?.detail || "Erro ao resetar usuário.")
+      onNotify(err.response?.data?.detail || "Erro ao resetar usuário.", "error")
+    } finally {
+      setTogglingId(null)
+    }
+  }
+
+  async function handleResetStreak(userId: string, username: string) {
+    if (typeof window !== "undefined" && !window.confirm(`Tem certeza que deseja zerar a ofensiva do usuário "${username}"?`)) {
+      return
+    }
+    setTogglingId(`${userId}-reset-streak`)
+    try {
+      await api.post(`/admin/users/reset-stats?user_id=${userId}&target=streak`)
+      onNotify("Ofensa resetada com sucesso!")
+    } catch (err: any) {
+      onNotify(err.response?.data?.detail || "Erro ao resetar ofensiva.", "error")
     } finally {
       setTogglingId(null)
     }
@@ -425,7 +490,7 @@ function UsersManagement({ currentUser }: { currentUser: User }) {
       ) : (
         <div className="rounded-xl border border-border/50 overflow-hidden">
           {/* Table header */}
-          <div className="hidden md:grid grid-cols-[1fr_200px_260px] bg-muted/50 px-5 py-2.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide border-b border-border/40">
+          <div className="hidden md:grid grid-cols-[1fr_200px_350px] bg-muted/50 px-5 py-2.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide border-b border-border/40">
             <span>Usuário</span>
             <span>Status</span>
             <span>Ações</span>
@@ -435,7 +500,7 @@ function UsersManagement({ currentUser }: { currentUser: User }) {
           {filtered.map((u, i) => (
             <div
               key={u.id}
-              className={`grid md:grid-cols-[1fr_200px_260px] gap-3 px-5 py-4 items-center ${
+              className={`grid md:grid-cols-[1fr_200px_350px] gap-3 px-5 py-4 items-center ${
                 i < filtered.length - 1 ? "border-b border-border/30" : ""
               } hover:bg-muted/30 transition-colors`}
             >
@@ -453,21 +518,26 @@ function UsersManagement({ currentUser }: { currentUser: User }) {
               <div className="flex flex-wrap gap-1.5">
                 {u.is_admin    && <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px] gap-1 shrink-0"><Shield className="w-2.5 h-2.5" />Admin</Badge>}
                 {u.is_premium  && <Badge className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20 text-[10px] gap-1 shrink-0"><Crown className="w-2.5 h-2.5" />Premium</Badge>}
+                {!u.is_premium && u.premium_requested && (
+                  <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/30 text-[10px] gap-1 shrink-0 animate-pulse">
+                    Solicitou Premium
+                  </Badge>
+                )}
                 {!u.allow_ai   && <Badge className="bg-destructive/10 text-destructive border-destructive/20 text-[10px] gap-1 shrink-0"><Brain className="w-2.5 h-2.5" />Sem IA</Badge>}
                 {u.allow_ai && !u.is_admin && !u.is_premium && <span className="text-xs text-muted-foreground">Padrão</span>}
               </div>
 
               {/* Action buttons */}
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 <Button
                   size="sm"
                   variant={u.allow_ai ? "default" : "secondary"}
                   disabled={!!togglingId}
                   onClick={() => handleToggle(u.id, "ai")}
-                  className="h-7 text-xs px-3 gap-1"
+                  className="h-7 text-xs px-2.5 gap-1 shrink-0"
                 >
                   {togglingId === `${u.id}-ai` ? <Loader2 className="w-3 h-3 animate-spin" /> : <Brain className="w-3 h-3" />}
-                  {u.allow_ai ? "IA ligada" : "IA desligada"}
+                  {u.allow_ai ? "IA" : "Sem IA"}
                 </Button>
 
                 <Button
@@ -475,21 +545,45 @@ function UsersManagement({ currentUser }: { currentUser: User }) {
                   variant={u.is_premium ? "outline" : "secondary"}
                   disabled={!!togglingId}
                   onClick={() => handleToggle(u.id, "premium")}
-                  className={`h-7 text-xs px-3 gap-1 ${u.is_premium ? "border-yellow-500/40 text-yellow-500 hover:bg-yellow-500/5" : ""}`}
+                  className={`h-7 text-xs px-2.5 gap-1 shrink-0 ${u.is_premium ? "border-yellow-500/40 text-yellow-500 hover:bg-yellow-500/5" : ""}`}
                 >
                   {togglingId === `${u.id}-premium` ? <Loader2 className="w-3 h-3 animate-spin" /> : <Crown className="w-3 h-3" />}
                   {u.is_premium ? "Premium" : "Free"}
                 </Button>
+
+                {currentUser.username === "brayan" && (
+                  <Button
+                    size="sm"
+                    variant={u.is_admin ? "outline" : "secondary"}
+                    disabled={!!togglingId || u.username === "brayan"}
+                    onClick={() => handleToggle(u.id, "admin")}
+                    className={`h-7 text-xs px-2.5 gap-1 shrink-0 ${u.is_admin ? "border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/5" : ""}`}
+                  >
+                    {togglingId === `${u.id}-admin` ? <Loader2 className="w-3 h-3 animate-spin" /> : <Shield className="w-3 h-3" />}
+                    {u.is_admin ? "Admin" : "Promover"}
+                  </Button>
+                )}
 
                 <Button
                   size="sm"
                   variant="outline"
                   disabled={!!togglingId}
                   onClick={() => handleResetUser(u.id, u.username)}
-                  className="h-7 text-xs px-3 gap-1 border-destructive/40 text-destructive hover:bg-destructive/10 transition-all"
+                  className="h-7 text-xs px-2.5 gap-1 shrink-0 border-destructive/40 text-destructive hover:bg-destructive/10 transition-all"
                 >
                   <Trash2 className="w-3 h-3" />
                   Resetar
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={!!togglingId}
+                  onClick={() => handleResetStreak(u.id, u.username)}
+                  className="h-7 text-xs px-2.5 gap-1 shrink-0 border-orange-500/40 text-orange-400 hover:bg-orange-500/10 transition-all"
+                >
+                  {togglingId === `${u.id}-reset-streak` ? <Loader2 className="w-3 h-3 animate-spin" /> : <Flame className="w-3 h-3" />}
+                  Zerar Ofensiva
                 </Button>
               </div>
             </div>

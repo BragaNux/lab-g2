@@ -122,6 +122,8 @@ def toggle_user_premium(
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado.")
     user.is_premium = not user.is_premium
+    if user.is_premium:
+        user.premium_requested = False
     db.commit()
     db.refresh(user)
     return user
@@ -133,23 +135,24 @@ def toggle_user_admin(
     db: Session = Depends(get_db),
     admin_user: User = Depends(require_admin),
 ):
+    if admin_user.username != settings.admin_username:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas o administrador principal (brayan) pode promover ou rebaixar outros administradores."
+        )
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado.")
-    if user.username != settings.admin_username:
+    if user.username == settings.admin_username:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Não é possível promover outros usuários a administrador. Apenas o administrador configurado no sistema é permitido.",
-        )
-    if str(user.id) == str(admin_user.id):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Você não pode remover seus próprios privilégios de administrador.",
+            detail="Não é possível alterar os privilégios de administrador da conta master."
         )
     user.is_admin = not user.is_admin
     db.commit()
     db.refresh(user)
     return user
+
 
 
 @router.post("/challenges/today/reset")
@@ -231,6 +234,7 @@ def reset_today_challenge(
 @router.post("/users/reset-stats")
 def reset_users_stats(
     user_id: str | None = None,
+    target: str | None = None,
     db: Session = Depends(get_db),
     admin_user: User = Depends(require_admin),
 ):
@@ -239,22 +243,36 @@ def reset_users_stats(
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
             raise HTTPException(status_code=404, detail="Usuário não encontrado.")
-        # Delete their game entries
-        db.query(Game).filter(Game.user_id == user.id).delete()
-        # Reset stats
-        user.xp = 0
-        user.streak = 0
-        user.last_played = None
-        db.commit()
-        return {"message": f"Usuário {user.username} resetado com sucesso!"}
+        if target == "streak":
+            user.streak = 0
+            user.last_played = None
+            db.commit()
+            return {"message": f"Ofensiva do usuário {user.username} resetada com sucesso!"}
+        else:
+            # Delete their game entries
+            db.query(Game).filter(Game.user_id == user.id).delete()
+            # Reset stats
+            user.xp = 0
+            user.streak = 0
+            user.last_played = None
+            db.commit()
+            return {"message": f"Usuário {user.username} resetado com sucesso!"}
     else:
         # Reset all users
-        db.query(Game).delete()
-        db.query(User).update({
-            User.xp: 0,
-            User.streak: 0,
-            User.last_played: None
-        })
-        db.commit()
-        return {"message": "Ranking, ofensivas e XP de todos os usuários resetados com sucesso!"}
+        if target == "streak":
+            db.query(User).update({
+                User.streak: 0,
+                User.last_played: None
+            })
+            db.commit()
+            return {"message": "Ofensivas de todos os usuários resetadas com sucesso!"}
+        else:
+            db.query(Game).delete()
+            db.query(User).update({
+                User.xp: 0,
+                User.streak: 0,
+                User.last_played: None
+            })
+            db.commit()
+            return {"message": "Ranking, ofensivas e XP de todos os usuários resetados com sucesso!"}
 

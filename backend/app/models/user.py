@@ -19,4 +19,5 @@ class User(Base):
     is_premium = Column(Boolean, default=False)
     is_admin = Column(Boolean, default=False)
     allow_ai = Column(Boolean, default=False)
+    premium_requested = Column(Boolean, default=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())

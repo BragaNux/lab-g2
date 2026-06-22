@@ -42,6 +42,7 @@ class UserResponse(BaseModel):
     is_premium: bool
     is_admin: bool
     allow_ai: bool
+    premium_requested: bool
 
     model_config = {"from_attributes": True}
 

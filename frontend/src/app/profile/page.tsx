@@ -129,7 +129,21 @@ export default function ProfilePage() {
       </div>
 
       {/* Premium section */}
-      {!user.is_premium ? (
+      {user.is_premium ? (
+        <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 mb-4 animate-slide-up-delay">
+          <div className="flex items-center gap-2 text-primary text-sm font-semibold">
+            <Crown className="w-4 h-4" />
+            Conta Premium ativa. Aproveite todos os recursos!
+          </div>
+        </div>
+      ) : user.premium_requested ? (
+        <div className="rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-4 mb-4 animate-slide-up-delay">
+          <div className="flex items-center gap-2 text-yellow-500 text-sm font-semibold">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Aguardando um administrador aceitar a solicitação de premium
+          </div>
+        </div>
+      ) : (
         <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 mb-4 animate-slide-up-delay">
           <div className="flex items-center gap-2 mb-2">
             <Crown className="w-4 h-4 text-primary" />
@@ -145,15 +159,8 @@ export default function ProfilePage() {
             size="sm"
           >
             {simLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Crown className="w-4 h-4" />}
-            {simLoading ? "Ativando..." : "Solicitar Premium"}
+            {simLoading ? "Solicitando..." : "Solicitar Premium"}
           </Button>
-        </div>
-      ) : (
-        <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 mb-4 animate-slide-up-delay">
-          <div className="flex items-center gap-2 text-primary text-sm font-semibold">
-            <Crown className="w-4 h-4" />
-            Conta Premium ativa. Aproveite todos os recursos!
-          </div>
         </div>
       )}
 
