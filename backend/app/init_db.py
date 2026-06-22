@@ -11,6 +11,8 @@ def init():
     Base.metadata.create_all(bind=engine)
     with engine.connect() as conn:
         conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS premium_requested BOOLEAN DEFAULT FALSE"))
+        conn.execute(text("ALTER TABLE games ADD COLUMN IF NOT EXISTS hint_text TEXT"))
+        conn.execute(text("ALTER TABLE games ADD COLUMN IF NOT EXISTS hint_count SMALLINT DEFAULT 0"))
         conn.commit()
     print("Banco inicializado com sucesso.")
 

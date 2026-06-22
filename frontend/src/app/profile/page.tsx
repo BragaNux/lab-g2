@@ -30,6 +30,7 @@ export default function ProfilePage() {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [simLoading, setSimLoading] = useState(false)
+  const [levelModalOpen, setLevelModalOpen] = useState(false)
 
   useEffect(() => {
     if (!isLoggedIn()) { router.push("/login"); return }
@@ -80,7 +81,12 @@ export default function ProfilePage() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-xl font-bold truncate">{user.username}</h2>
-              <span className={`text-xs font-semibold ${level.color} shrink-0`}>{level.name}</span>
+              <span 
+                onClick={() => setLevelModalOpen(true)}
+                className={`text-xs font-semibold ${level.color} shrink-0 cursor-pointer hover:underline hover:opacity-85 transition-all`}
+              >
+                {level.name}
+              </span>
             </div>
             <p className="text-sm text-muted-foreground truncate">{user.email}</p>
             <div className="flex items-center gap-1.5 flex-wrap mt-1">
@@ -117,9 +123,17 @@ export default function ProfilePage() {
           {[
             { icon: Star, label: "XP Total", value: user.xp },
             { icon: Flame, label: "Sequência", value: `${user.streak}d` },
-            { icon: BookOpen, label: "Nível", value: level.name },
-          ].map(({ icon: Icon, label, value }) => (
-            <div key={label} className="rounded-xl bg-muted/50 p-3 text-center">
+            { icon: BookOpen, label: "Nível", value: level.name, onClick: () => setLevelModalOpen(true) },
+          ].map(({ icon: Icon, label, value, onClick }) => (
+            <div 
+              key={label} 
+              onClick={onClick}
+              className={`rounded-xl bg-muted/50 p-3 text-center transition-all ${
+                onClick 
+                  ? "cursor-pointer hover:bg-muted/70 active:scale-95 border border-transparent hover:border-primary/20" 
+                  : ""
+              }`}
+            >
               <Icon className="w-4 h-4 text-primary mx-auto mb-1" />
               <p className="text-lg font-bold leading-tight">{value}</p>
               <p className="text-xs text-muted-foreground">{label}</p>
@@ -210,6 +224,115 @@ export default function ProfilePage() {
         <LogOut className="w-4 h-4" />
         Sair da conta
       </Button>
+
+      <LevelModal
+        isOpen={levelModalOpen}
+        onClose={() => setLevelModalOpen(false)}
+        currentXp={user.xp}
+        currentLevelName={level.name}
+      />
     </main>
+  )
+}
+
+interface LevelModalProps {
+  isOpen: boolean
+  onClose: () => void
+  currentXp: number
+  currentLevelName: string
+}
+
+function LevelModal({ isOpen, onClose, currentXp, currentLevelName }: LevelModalProps) {
+  if (!isOpen) return null
+
+  const currentLevelInfo = LEVELS.find(l => l.name === currentLevelName) || LEVELS[0]
+  
+  return (
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in"
+      onClick={onClose}
+    >
+      <div 
+        className="relative w-full max-w-sm rounded-2xl border border-border/80 bg-card p-6 shadow-2xl animate-scale-in space-y-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="text-center space-y-1">
+          <h3 className="text-xl font-bold text-foreground">Níveis de Experiência</h3>
+          <p className="text-xs text-muted-foreground">Acumule XP acertando desafios diários</p>
+        </div>
+
+        {/* Levels List */}
+        <div className="space-y-3">
+          {LEVELS.map((lvl) => {
+            const isCurrent = lvl.name === currentLevelName
+            return (
+              <div 
+                key={lvl.name}
+                className={`p-3.5 rounded-xl border flex items-center justify-between transition-all ${
+                  isCurrent 
+                    ? "bg-primary/5 border-primary/30 shadow-md shadow-primary/5 scale-[1.02]" 
+                    : "bg-muted/30 border-border/55 opacity-70"
+                }`}
+              >
+                <div>
+                  <p className={`font-bold text-sm ${lvl.color} flex items-center gap-1.5`}>
+                    {lvl.name}
+                    {isCurrent && <span className="text-[10px] bg-primary/25 text-primary px-1.5 py-0.5 rounded-md font-semibold">Atual</span>}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">A partir de {lvl.minXP} XP</p>
+                </div>
+                <div className="text-xs font-semibold text-muted-foreground bg-muted/60 border border-border/30 px-2.5 py-1 rounded-lg">
+                  {lvl.minXP} XP
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Detailed Progress bar */}
+        <div className="pt-2 border-t border-border/40 space-y-3">
+          {(() => {
+            const nextLvl = LEVELS[LEVELS.findIndex(l => l.name === currentLevelName) + 1]
+            if (!nextLvl) {
+              return (
+                <div className="text-center space-y-2">
+                  <p className="text-xs font-semibold text-primary">✨ Nível Máximo Atingido! ✨</p>
+                  <p className="text-xs text-muted-foreground">Você é um Erudito de alto nível. Parabéns!</p>
+                </div>
+              )
+            }
+            
+            const prevMin = currentLevelInfo.minXP
+            const nextMin = nextLvl.minXP
+            const range = nextMin - prevMin
+            const progress = Math.min(((currentXp - prevMin) / range) * 100, 100)
+            const remaining = nextMin - currentXp
+
+            return (
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs font-semibold text-muted-foreground">
+                  <span>Progresso do Nível</span>
+                  <span className="text-primary">{Math.round(progress)}%</span>
+                </div>
+                <div className="h-2.5 bg-muted rounded-full overflow-hidden border border-border/30">
+                  <div 
+                    className="h-full bg-primary rounded-full transition-all duration-700 ease-out"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <p className="text-[11px] text-muted-foreground text-center pt-1 leading-relaxed">
+                  Faltam <span className="font-bold text-foreground">{remaining} XP</span> para você subir para <span className={`font-bold ${nextLvl.color}`}>{nextLvl.name}</span>!
+                </p>
+              </div>
+            )
+          })()}
+        </div>
+
+        {/* Close Button */}
+        <Button onClick={onClose} className="w-full h-10 text-xs font-semibold mt-2">
+          Fechar
+        </Button>
+      </div>
+    </div>
   )
 }

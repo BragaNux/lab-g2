@@ -17,3 +17,9 @@ class PassageCreateRequest(BaseModel):
 class DailyChallengeCreateRequest(BaseModel):
     passage_id: uuid.UUID
     date: date
+
+
+class UpdateStatsRequest(BaseModel):
+    xp: int
+    streak: int
+

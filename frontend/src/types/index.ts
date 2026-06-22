@@ -17,6 +17,10 @@ export interface Challenge {
   difficulty: number
   points_available: number
   already_played: boolean
+  allow_ai?: boolean
+  used_hint?: boolean
+  hint_text?: string | null
+  hint_count?: number
 }
 
 export interface SubmitResult {
@@ -25,6 +29,7 @@ export interface SubmitResult {
   correct_answer: { title: string; author: string }
   new_streak?: number
   new_xp?: number
+  allow_ai?: boolean
 }
 
 

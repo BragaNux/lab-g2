@@ -28,9 +28,41 @@ function Stars({ value, max = 5 }: { value: number; max?: number }) {
   )
 }
 
+function parseBoldText(text: string) {
+  const parts = text.split(/(\*\*.*?\*\*)/g)
+  return parts.map((part, idx) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={idx} className="font-extrabold text-primary">{part.slice(2, -2)}</strong>
+    }
+    return part
+  })
+}
+
+function renderFormattedText(text: string) {
+  const lines = text.split("\n")
+  return lines.map((line, lineIdx) => {
+    const headingMatch = line.match(/^(#{1,6})\s+(.*)$/)
+    if (headingMatch) {
+      const level = headingMatch[1].length
+      const content = headingMatch[2]
+      const parsedContent = parseBoldText(content)
+      if (level === 1) {
+        return <h4 key={lineIdx} className="text-sm font-bold text-primary mb-1.5 mt-1">{parsedContent}</h4>
+      }
+      return <h5 key={lineIdx} className="text-xs font-semibold text-primary mb-1 mt-0.5">{parsedContent}</h5>
+    }
+    const parsedLine = parseBoldText(line)
+    return (
+      <p key={lineIdx} className="text-sm text-foreground/80 leading-relaxed min-h-[1.2rem] mt-0.5">
+        {parsedLine}
+      </p>
+    )
+  })
+}
+
 export function PassageCard({ challenge, mode = "today" }: Props) {
   const [answer, setAnswer] = useState("")
-  const [hint, setHint] = useState<string | null>(null)
+  const [hint, setHint] = useState<string | null>(challenge.hint_text || null)
   const [result, setResult] = useState<SubmitResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -58,9 +90,9 @@ export function PassageCard({ challenge, mode = "today" }: Props) {
     ? `/challenge/history/${challenge.id}/play`
     : "/challenge/today/submit"
 
-  const pointsAvailable = hint
-    ? Math.floor(challenge.points_available / 2)
-    : challenge.points_available
+  const pointsAvailable = mode === "history"
+    ? 0
+    : (hint ? Math.floor(challenge.points_available / 2) : challenge.points_available)
 
   async function handleSubmit() {
     if (!answer.trim()) return
@@ -127,7 +159,9 @@ export function PassageCard({ challenge, mode = "today" }: Props) {
           </div>
 
           <div className="flex items-center gap-1.5">
-            <span className="text-xs text-muted-foreground">Vale</span>
+            <span className="text-xs text-muted-foreground">
+              {mode === "history" ? "Modo Treino" : "Vale"}
+            </span>
             <span className="text-sm font-bold text-primary">{pointsAvailable} XP</span>
           </div>
         </div>
@@ -152,10 +186,14 @@ export function PassageCard({ challenge, mode = "today" }: Props) {
           <div className="mx-6 mb-4 rounded-xl bg-primary/8 border border-primary/20 p-4 animate-scale-in">
             <div className="flex gap-2 items-start">
               <span className="text-lg mt-0.5">💡</span>
-              <div>
-                <p className="text-sm font-semibold text-primary mb-1">Dica</p>
-                <p className="text-sm text-foreground/80">{hint}</p>
-                <p className="text-xs text-muted-foreground mt-2">Resposta vale 50% dos pontos</p>
+              <div className="flex-1 min-w-0">
+                {!hint.trim().startsWith("#") && (
+                  <p className="text-sm font-semibold text-primary mb-1">Dica</p>
+                )}
+                <div className="space-y-1">
+                  {renderFormattedText(hint)}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2.5">Resposta vale 50% dos pontos</p>
               </div>
             </div>
           </div>
@@ -164,7 +202,7 @@ export function PassageCard({ challenge, mode = "today" }: Props) {
         {/* Footer: input / result */}
         <div className="px-4 sm:px-6 pb-6">
           {result ? (
-            <ResultModal result={result} />
+            <ResultModal result={result} challengeId={challenge.id} allowAi={!!challenge.allow_ai} mode={mode} />
           ) : (
             <div className="space-y-3">
               <div className="relative">
@@ -191,7 +229,7 @@ export function PassageCard({ challenge, mode = "today" }: Props) {
                 >
                   Confirmar Resposta
                 </Button>
-                {!hint && (
+                {!hint && challenge.allow_ai && (
                   <HintButton
                     url={mode === "history" ? `/challenge/history/${challenge.id}/hint` : "/challenge/today/hint"}
                     onHintReceived={setHint}

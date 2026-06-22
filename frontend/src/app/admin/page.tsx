@@ -21,10 +21,67 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: "users",     label: "Gerenciar Usuários",   icon: Users       },
 ]
 
+interface ConfirmModalProps {
+  isOpen: boolean
+  title: string
+  message: string
+  onConfirm: () => void
+  onCancel: () => void
+  confirmText?: string
+  cancelText?: string
+  isDestructive?: boolean
+}
+
+function ConfirmModal({
+  isOpen,
+  title,
+  message,
+  onConfirm,
+  onCancel,
+  confirmText = "Confirmar",
+  cancelText = "Cancelar",
+  isDestructive = false
+}: ConfirmModalProps) {
+  if (!isOpen) return null
+
+  return (
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in"
+      onClick={onCancel}
+    >
+      <div 
+        className="relative w-full max-w-sm rounded-2xl border border-border/80 bg-card p-6 shadow-2xl animate-scale-in space-y-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="text-lg font-bold text-foreground">{title}</h3>
+        <p className="text-sm text-muted-foreground leading-relaxed">{message}</p>
+        <div className="flex gap-2 justify-end pt-2">
+          <Button variant="ghost" onClick={onCancel} className="h-10 text-xs px-4">
+            {cancelText}
+          </Button>
+          <Button
+            variant={isDestructive ? "destructive" : "default"}
+            onClick={onConfirm}
+            className="h-10 text-xs px-4"
+          >
+            {confirmText}
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminPage() {
   const router = useRouter()
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
+  const [confirmConfig, setConfirmConfig] = useState<{
+    title: string
+    message: string
+    onConfirm: () => void
+    isDestructive?: boolean
+  } | null>(null)
   const [tab, setTab] = useState<Tab>(() => {
     if (typeof window !== "undefined") {
       const saved = sessionStorage.getItem("admin_active_tab")
@@ -155,15 +212,30 @@ export default function AdminPage() {
         {tab === "ingest"    && <IngestForm onNotify={triggerNotification} />}
         {tab === "passage"   && <PassageForm onNotify={triggerNotification} />}
         {tab === "challenge" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <ChallengeForm onNotify={triggerNotification} />
-            <ResetChallengeBox onNotify={triggerNotification} />
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ChallengeForm onNotify={triggerNotification} />
+              <ResetTodayBox onNotify={triggerNotification} onConfirmRequest={setConfirmConfig} />
+            </div>
+            <ResetHistoryBox onNotify={triggerNotification} onConfirmRequest={setConfirmConfig} />
           </div>
         )}
-        {tab === "users"     && <UsersManagement currentUser={currentUser} onNotify={triggerNotification} />}
+        {tab === "users"     && <UsersManagement currentUser={currentUser} onNotify={triggerNotification} onConfirmRequest={setConfirmConfig} />}
       </div>
 
-
+      <ConfirmModal
+        isOpen={confirmConfig !== null}
+        title={confirmConfig?.title || ""}
+        message={confirmConfig?.message || ""}
+        isDestructive={confirmConfig?.isDestructive}
+        onConfirm={() => {
+          if (confirmConfig) {
+            confirmConfig.onConfirm()
+            setConfirmConfig(null)
+          }
+        }}
+        onCancel={() => setConfirmConfig(null)}
+      />
     </main>
   )
 }
@@ -335,32 +407,170 @@ function ChallengeForm({ onNotify }: { onNotify: (msg: string, type?: "success" 
   )
 }
 
-/* ───── Reset Challenge Box ───── */
-function ResetChallengeBox({ onNotify }: { onNotify: (msg: string, type?: "success" | "error") => void }) {
+/* ───── Reset TODAY Box ───── */
+function ResetTodayBox({
+  onNotify,
+  onConfirmRequest,
+}: {
+  onNotify: (msg: string, type?: "success" | "error") => void
+  onConfirmRequest: (config: { title: string; message: string; onConfirm: () => void; isDestructive?: boolean }) => void
+}) {
   const [loading, setLoading] = useState(false)
+  const [loadingEra, setLoadingEra] = useState<"modern" | "classic" | null>(null)
 
   async function handleReset() {
-    if (typeof window !== "undefined" && !window.confirm("Tem certeza que deseja resetar o desafio de hoje? Isso apagará todas as tentativas jogadas por todos os usuários para o dia de hoje.")) {
-      return
-    }
-    setLoading(true)
-    try {
-      const res = await api.post("/admin/challenges/today/reset")
-      onNotify(res.data.message || "Desafio de hoje resetado com sucesso!")
-    } catch (err: any) {
-      onNotify(err.response?.data?.detail || "Erro ao resetar desafio.", "error")
-    } finally {
-      setLoading(false)
-    }
+    onConfirmRequest({
+      title: "Resetar Desafio de Hoje",
+      message: "Tem certeza? Isso apagará todas as tentativas de hoje, subtrairá o XP e decrementará a ofensiva de quem jogou.",
+      isDestructive: true,
+      onConfirm: async () => {
+        setLoading(true)
+        try {
+          const res = await api.post("/admin/challenges/today/reset")
+          onNotify(res.data.message || "Desafio de hoje resetado com sucesso!")
+        } catch (err: any) {
+          onNotify(err.response?.data?.detail || "Erro ao resetar desafio.", "error")
+        } finally { setLoading(false) }
+      }
+    })
   }
 
+  async function handleResetByEra(era: "modern" | "classic") {
+    const eraLabel = era === "modern" ? "literatura moderna (pós 1980)" : "literatura clássica (pré 1980)"
+    onConfirmRequest({
+      title: `Hoje: ${era === "modern" ? "Literatura Moderna 📚" : "Literatura Clássica 🏛️"}`,
+      message: `O desafio de HOJE será trocado por um trecho de ${eraLabel}. As tentativas de hoje serão apagadas e o XP descontado.`,
+      isDestructive: true,
+      onConfirm: async () => {
+        setLoadingEra(era)
+        try {
+          const res = await api.post(`/admin/challenges/today/reset-by-era?era=${era}`)
+          onNotify(res.data.message || `Desafio de hoje trocado para ${eraLabel}!`)
+        } catch (err: any) {
+          onNotify(err.response?.data?.detail || "Erro ao resetar desafio.", "error")
+        } finally { setLoadingEra(null) }
+      }
+    })
+  }
+
+  const isAnyLoading = loading || loadingEra !== null
+
   return (
-    <Panel title="Resetar Desafio de Hoje (Testes)" description="Apaga todas as tentativas de hoje no banco, subtrai o XP obtido hoje de quem jogou, decrementa a ofensiva e sorteia outro trecho do histórico para hoje (trocando suas datas). Útil para testar.">
-      <div className="space-y-4 max-w-md">
-        <Button onClick={handleReset} disabled={loading} variant="destructive" className="w-full sm:w-auto h-11 px-8 gap-2 bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-md transition-all">
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-          Resetar e Colocar Novo Desafio
+    <Panel title="🗓️ Resetar Desafio de HOJE" description="Apaga tentativas de hoje, subtrai XP e ofensiva. Sorteia novo trecho — aleatório, moderno ou clássico.">
+      <div className="space-y-2.5 max-w-sm">
+        <Button onClick={handleReset} disabled={isAnyLoading} variant="destructive"
+          className="w-full h-10 gap-2 text-sm">
+          {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+          Aleatório
         </Button>
+        <div className="grid grid-cols-2 gap-2">
+          <Button onClick={() => handleResetByEra("modern")} disabled={isAnyLoading}
+            className="h-10 gap-1.5 text-sm bg-violet-600 hover:bg-violet-700 text-white border-0">
+            {loadingEra === "modern" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <span>📚</span>}
+            Modernos
+          </Button>
+          <Button onClick={() => handleResetByEra("classic")} disabled={isAnyLoading}
+            className="h-10 gap-1.5 text-sm bg-amber-600 hover:bg-amber-700 text-white border-0">
+            {loadingEra === "classic" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <span>🏛️</span>}
+            Clássicos
+          </Button>
+        </div>
+      </div>
+    </Panel>
+  )
+}
+
+/* ───── Reset HISTORY Box ───── */
+function ResetHistoryBox({
+  onNotify,
+  onConfirmRequest,
+}: {
+  onNotify: (msg: string, type?: "success" | "error") => void
+  onConfirmRequest: (config: { title: string; message: string; onConfirm: () => void; isDestructive?: boolean }) => void
+}) {
+  const [loadingEra, setLoadingEra] = useState<"modern" | "classic" | null>(null)
+  const [days, setDays] = useState(7)
+
+  async function handleHistoryReset(era: "modern" | "classic") {
+    const eraLabel = era === "modern" ? "literatura moderna (pós 1980)" : "literatura clássica (pré 1980)"
+    const eraEmoji = era === "modern" ? "📚" : "🏛️"
+    onConfirmRequest({
+      title: `Histórico: ${eraEmoji} ${era === "modern" ? "Literatura Moderna" : "Literatura Clássica"}`,
+      message: `Os últimos ${days} desafio(s) do histórico terão seus trechos substituídos por ${eraLabel}. Os jogos anteriores não são afetados (histórico não dá XP).`,
+      isDestructive: false,
+      onConfirm: async () => {
+        setLoadingEra(era)
+        try {
+          const res = await api.post(`/admin/challenges/history/reset-by-era?era=${era}&days=${days}`)
+          onNotify(res.data.message || `Histórico atualizado para ${eraLabel}!`)
+        } catch (err: any) {
+          onNotify(err.response?.data?.detail || "Erro ao atualizar histórico.", "error")
+        } finally { setLoadingEra(null) }
+      }
+    })
+  }
+
+  const isAnyLoading = loadingEra !== null
+
+  return (
+    <Panel
+      title="📜 Resetar Histórico por Era"
+      description="Substitui os trechos dos desafios históricos (dias passados) para literatura moderna ou clássica. Útil para testar a tela de histórico com desafios específicos. Não afeta XP nem ofensiva."
+    >
+      <div className="space-y-4">
+        {/* Days selector */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-sm text-muted-foreground shrink-0">Últimos dias:</span>
+          <div className="flex gap-1.5">
+            {[3, 7, 14, 30].map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => setDays(d)}
+                className={`w-10 h-8 rounded-lg text-xs font-bold border transition-all ${
+                  days === d
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                }`}
+              >
+                {d}d
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Era buttons */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg">
+          <button
+            onClick={() => handleHistoryReset("modern")}
+            disabled={isAnyLoading}
+            className="relative group flex flex-col items-start gap-1 p-4 rounded-xl border-2 border-violet-500/30 bg-violet-500/5 hover:border-violet-500/60 hover:bg-violet-500/10 transition-all disabled:opacity-50 text-left"
+          >
+            <div className="flex items-center gap-2">
+              {loadingEra === "modern" ? <Loader2 className="w-4 h-4 animate-spin text-violet-400" /> : <span className="text-lg">📚</span>}
+              <span className="font-semibold text-sm text-violet-300">Literatura Moderna</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Harry Potter, Game of Thrones, Jogos Vorazes, Percy Jackson, O Alquimista…
+            </p>
+            <span className="text-[10px] text-violet-400/70 mt-0.5">Publicados a partir de 1980</span>
+          </button>
+
+          <button
+            onClick={() => handleHistoryReset("classic")}
+            disabled={isAnyLoading}
+            className="relative group flex flex-col items-start gap-1 p-4 rounded-xl border-2 border-amber-500/30 bg-amber-500/5 hover:border-amber-500/60 hover:bg-amber-500/10 transition-all disabled:opacity-50 text-left"
+          >
+            <div className="flex items-center gap-2">
+              {loadingEra === "classic" ? <Loader2 className="w-4 h-4 animate-spin text-amber-400" /> : <span className="text-lg">🏛️</span>}
+              <span className="font-semibold text-sm text-amber-300">Literatura Clássica</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Dom Casmurro, Hamlet, 1984, Crime e Castigo, O Guarani, Cem Anos de Solidão…
+            </p>
+            <span className="text-[10px] text-amber-400/70 mt-0.5">Publicados antes de 1980</span>
+          </button>
+        </div>
       </div>
     </Panel>
   )
@@ -368,13 +578,22 @@ function ResetChallengeBox({ onNotify }: { onNotify: (msg: string, type?: "succe
 
 
 /* ───── Users Management ───── */
-function UsersManagement({ currentUser, onNotify }: { currentUser: User; onNotify: (msg: string, type?: "success" | "error") => void }) {
+function UsersManagement({
+  currentUser,
+  onNotify,
+  onConfirmRequest,
+}: {
+  currentUser: User
+  onNotify: (msg: string, type?: "success" | "error") => void
+  onConfirmRequest: (config: { title: string; message: string; onConfirm: () => void; isDestructive?: boolean }) => void
+}) {
 
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [error, setError] = useState("")
+  const [editingUser, setEditingUser] = useState<User | null>(null)
 
   useEffect(() => { fetchUsers() }, [])
 
@@ -389,6 +608,12 @@ function UsersManagement({ currentUser, onNotify }: { currentUser: User; onNotif
     } finally { setLoading(false) }
   }
 
+  async function handleSaveStats(userId: string, xp: number, streak: number) {
+    await api.post(`/admin/users/${userId}/update-stats`, { xp, streak })
+    onNotify("Estatísticas do usuário atualizadas com sucesso!")
+    fetchUsers()
+  }
+
   async function handleToggle(userId: string, type: "ai" | "premium" | "admin") {
     setTogglingId(`${userId}-${type}`)
     try {
@@ -401,52 +626,68 @@ function UsersManagement({ currentUser, onNotify }: { currentUser: User; onNotif
   }
 
   async function handleResetAll() {
-    if (typeof window !== "undefined" && !window.confirm("ATENÇÃO: Tem certeza que deseja resetar TODOS os usuários?")) {
-      return
-    }
-    if (typeof window !== "undefined" && !window.confirm("CONFIRMAÇÃO ADICIONAL: Isso apagará permanentemente o XP, as ofensivas, e todo o histórico de jogo de todos os usuários do sistema. Continuar?")) {
-      return
-    }
-    setLoading(true)
-    setError("")
-    try {
-      await api.post("/admin/users/reset-stats")
-      onNotify("Resetado tudo com sucesso!")
-    } catch (err: any) {
-      onNotify(err.response?.data?.detail || "Erro ao resetar usuários.", "error")
-    } finally {
-      setLoading(false)
-    }
+    onConfirmRequest({
+      title: "Resetar Geral",
+      message: "ATENÇÃO: Tem certeza que deseja resetar TODOS os usuários? Isso apagará permanentemente o XP, as ofensivas, e todo o histórico de jogo de todos os usuários do sistema.",
+      isDestructive: true,
+      onConfirm: () => {
+        onConfirmRequest({
+          title: "Confirmação Adicional",
+          message: "CONFIRMAÇÃO ADICIONAL: Isso apagará permanentemente o XP, as ofensivas, e todo o histórico de jogo de todos os usuários do sistema. Continuar?",
+          isDestructive: true,
+          onConfirm: async () => {
+            setLoading(true)
+            setError("")
+            try {
+              await api.post("/admin/users/reset-stats")
+              onNotify("Resetado tudo com sucesso!")
+            } catch (err: any) {
+              onNotify(err.response?.data?.detail || "Erro ao resetar usuários.", "error")
+            } finally {
+              setLoading(false)
+            }
+          }
+        })
+      }
+    })
   }
 
   async function handleResetUser(userId: string, username: string) {
-    if (typeof window !== "undefined" && !window.confirm(`Tem certeza que deseja resetar o usuário "${username}" do zero? Isso apagará seu XP, sua ofensiva e todas as suas tentativas de jogo.`)) {
-      return
-    }
-    setTogglingId(`${userId}-reset`)
-    try {
-      await api.post(`/admin/users/reset-stats?user_id=${userId}`)
-      onNotify("Usuário resetado com sucesso!")
-    } catch (err: any) {
-      onNotify(err.response?.data?.detail || "Erro ao resetar usuário.", "error")
-    } finally {
-      setTogglingId(null)
-    }
+    onConfirmRequest({
+      title: "Resetar Usuário",
+      message: `Tem certeza que deseja resetar o usuário "${username}" do zero? Isso apagará seu XP, sua ofensiva e todas as suas tentativas de jogo.`,
+      isDestructive: true,
+      onConfirm: async () => {
+        setTogglingId(`${userId}-reset`)
+        try {
+          await api.post(`/admin/users/reset-stats?user_id=${userId}`)
+          onNotify("Usuário resetado com sucesso!")
+        } catch (err: any) {
+          onNotify(err.response?.data?.detail || "Erro ao resetar usuário.", "error")
+        } finally {
+          setTogglingId(null)
+        }
+      }
+    })
   }
 
   async function handleResetStreak(userId: string, username: string) {
-    if (typeof window !== "undefined" && !window.confirm(`Tem certeza que deseja zerar a ofensiva do usuário "${username}"?`)) {
-      return
-    }
-    setTogglingId(`${userId}-reset-streak`)
-    try {
-      await api.post(`/admin/users/reset-stats?user_id=${userId}&target=streak`)
-      onNotify("Ofensa resetada com sucesso!")
-    } catch (err: any) {
-      onNotify(err.response?.data?.detail || "Erro ao resetar ofensiva.", "error")
-    } finally {
-      setTogglingId(null)
-    }
+    onConfirmRequest({
+      title: "Zerar Ofensiva",
+      message: `Tem certeza que deseja zerar a ofensiva do usuário "${username}"?`,
+      isDestructive: true,
+      onConfirm: async () => {
+        setTogglingId(`${userId}-reset-streak`)
+        try {
+          await api.post(`/admin/users/reset-stats?user_id=${userId}&target=streak`)
+          onNotify("Ofensa resetada com sucesso!")
+        } catch (err: any) {
+          onNotify(err.response?.data?.detail || "Erro ao resetar ofensiva.", "error")
+        } finally {
+          setTogglingId(null)
+        }
+      }
+    })
   }
 
   const filtered = users.filter((u) =>
@@ -568,6 +809,17 @@ function UsersManagement({ currentUser, onNotify }: { currentUser: User; onNotif
                   size="sm"
                   variant="outline"
                   disabled={!!togglingId}
+                  onClick={() => setEditingUser(u)}
+                  className="h-7 text-xs px-2.5 gap-1 shrink-0 border-primary/40 text-primary hover:bg-primary/10 transition-all"
+                >
+                  <Award className="w-3 h-3" />
+                  Editar XP/Streak
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={!!togglingId}
                   onClick={() => handleResetUser(u.id, u.username)}
                   className="h-7 text-xs px-2.5 gap-1 shrink-0 border-destructive/40 text-destructive hover:bg-destructive/10 transition-all"
                 >
@@ -594,7 +846,105 @@ function UsersManagement({ currentUser, onNotify }: { currentUser: User; onNotif
       <p className="text-xs text-muted-foreground mt-4">
         {filtered.length} usuário{filtered.length !== 1 ? "s" : ""} encontrado{filtered.length !== 1 ? "s" : ""}
       </p>
+
+      <EditStatsModal 
+        isOpen={editingUser !== null} 
+        onClose={() => setEditingUser(null)} 
+        user={editingUser} 
+        onSave={handleSaveStats} 
+      />
     </Panel>
+  )
+}
+
+interface EditStatsModalProps {
+  isOpen: boolean
+  onClose: () => void
+  user: User | null
+  onSave: (userId: string, xp: number, streak: number) => Promise<void>
+}
+
+function EditStatsModal({ isOpen, onClose, user, onSave }: EditStatsModalProps) {
+  const [xp, setXp] = useState(0)
+  const [streak, setStreak] = useState(0)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    if (user) {
+      setXp(user.xp)
+      setStreak(user.streak)
+      setError("")
+    }
+  }, [user])
+
+  if (!isOpen || !user) return null
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setSaving(true)
+    setError("")
+    try {
+      await onSave(user.id, xp, streak)
+      onClose()
+    } catch (err: any) {
+      setError(err.response?.data?.detail || "Erro ao salvar estatísticas.")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in"
+      onClick={onClose}
+    >
+      <form 
+        onSubmit={handleSubmit}
+        className="relative w-full max-w-sm rounded-2xl border border-border/80 bg-card p-6 shadow-2xl animate-scale-in space-y-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="text-lg font-bold text-foreground">Editar Estatísticas</h3>
+        <p className="text-xs text-muted-foreground">Atualizar XP e Ofensiva de <strong>{user.username}</strong></p>
+        
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <span className="text-xs text-muted-foreground block font-medium">Pontos de XP</span>
+            <Input 
+              type="number" 
+              value={xp} 
+              onChange={(e) => setXp(Math.max(0, parseInt(e.target.value) || 0))}
+              required 
+            />
+          </div>
+          <div className="space-y-1">
+            <span className="text-xs text-muted-foreground block font-medium">Ofensiva (dias)</span>
+            <Input 
+              type="number" 
+              value={streak} 
+              onChange={(e) => setStreak(Math.max(0, parseInt(e.target.value) || 0))}
+              required 
+            />
+          </div>
+        </div>
+
+        {error && <p className="text-xs text-destructive font-medium bg-destructive/10 rounded-lg px-3 py-2">{error}</p>}
+
+        <div className="flex gap-2 justify-end pt-2">
+          <Button variant="ghost" type="button" onClick={onClose} disabled={saving} className="h-10 text-xs px-4">
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            disabled={saving}
+            className="h-10 text-xs px-4 bg-primary text-primary-foreground hover:bg-primary/95"
+          >
+            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1 text-primary-foreground" /> : null}
+            Salvar
+          </Button>
+        </div>
+      </form>
+    </div>
   )
 }
 

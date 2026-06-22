@@ -23,6 +23,7 @@ class Game(Base):
     points_earned = Column(SmallInteger, default=0)
     is_history_play = Column(Boolean, default=False)
     hint_count = Column(SmallInteger, default=0)
+    hint_text = Column(Text, nullable=True)
     played_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
 
     challenge = relationship("DailyChallenge", back_populates="games")

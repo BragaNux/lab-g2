@@ -8,6 +8,10 @@ class ChallengeResponse(BaseModel):
     difficulty: int
     points_available: int
     already_played: bool
+    allow_ai: bool = False
+    used_hint: bool = False
+    hint_text: str | None = None
+    hint_count: int = 0
 
     model_config = {"from_attributes": True}
 

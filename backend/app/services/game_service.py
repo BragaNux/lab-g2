@@ -41,29 +41,41 @@ def evaluate_answer(user_answer: str, correct_title: str) -> bool:
 def submit_answer(user_id: str, challenge: DailyChallenge, answer: str, used_hint: bool, db: Session) -> dict:
     existing = (
         db.query(Game)
-        .filter(Game.user_id == user_id, Game.challenge_id == challenge.id, Game.is_history_play == False)  # noqa: E712
+        .filter(Game.user_id == user_id, Game.challenge_id == challenge.id)
         .first()
     )
-    if existing:
+    if existing and existing.is_correct is not None and not existing.is_history_play:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Você já completou este desafio.")
 
     is_correct = evaluate_answer(answer, challenge.passage.book.title)
 
+    has_used_hint = used_hint or (existing and existing.used_hint if existing else False)
+
     points = 0
     if is_correct:
         base_points = challenge.passage.points
-        points = base_points // 2 if used_hint else base_points
+        points = base_points // 2 if has_used_hint else base_points
 
-    game = Game(
-        user_id=user_id,
-        challenge_id=challenge.id,
-        answer=answer,
-        is_correct=is_correct,
-        used_hint=used_hint,
-        points_earned=points,
-        is_history_play=False,
-    )
-    db.add(game)
+    from sqlalchemy.sql import func
+    if not existing:
+        game = Game(
+            user_id=user_id,
+            challenge_id=challenge.id,
+            answer=answer,
+            is_correct=is_correct,
+            used_hint=has_used_hint,
+            points_earned=points,
+            is_history_play=False,
+            played_at=func.now(),
+        )
+        db.add(game)
+    else:
+        existing.answer = answer
+        existing.is_correct = is_correct
+        existing.used_hint = has_used_hint
+        existing.points_earned = points
+        existing.is_history_play = False
+        existing.played_at = func.now()
 
     user = db.query(User).filter(User.id == user_id).first()
     if points > 0 and user:
@@ -84,13 +96,14 @@ def submit_answer(user_id: str, challenge: DailyChallenge, answer: str, used_hin
     }
 
 
-def submit_history_answer(user_id: str, challenge: DailyChallenge, answer: str, db: Session) -> dict:
+def submit_history_answer(user_id: str, challenge: DailyChallenge, answer: str, used_hint: bool, db: Session) -> dict:
     existing = (
         db.query(Game)
         .filter(Game.user_id == user_id, Game.challenge_id == challenge.id)
         .first()
     )
     is_correct = evaluate_answer(answer, challenge.passage.book.title)
+    has_used_hint = used_hint or (existing and existing.used_hint if existing else False)
 
     if not existing:
         game = Game(
@@ -98,7 +111,7 @@ def submit_history_answer(user_id: str, challenge: DailyChallenge, answer: str, 
             challenge_id=challenge.id,
             answer=answer,
             is_correct=is_correct,
-            used_hint=False,
+            used_hint=has_used_hint,
             points_earned=0,
             is_history_play=True,
         )
@@ -106,10 +119,13 @@ def submit_history_answer(user_id: str, challenge: DailyChallenge, answer: str, 
     else:
         existing.answer = answer
         existing.is_correct = is_correct
+        existing.used_hint = has_used_hint
         existing.points_earned = 0
         existing.is_history_play = True
         
     db.commit()
+
+    user = db.query(User).filter(User.id == user_id).first()
 
     return {
         "is_correct": is_correct,
@@ -118,6 +134,8 @@ def submit_history_answer(user_id: str, challenge: DailyChallenge, answer: str, 
             "title": challenge.passage.book.title,
             "author": challenge.passage.book.author,
         },
+        "new_streak": user.streak if user else 0,
+        "new_xp": user.xp if user else 0,
     }
 
 
