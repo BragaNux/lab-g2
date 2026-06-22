@@ -1,7 +1,7 @@
-# BookGuess — Documento de Arquitetura
+# BookGuess - Documento de Arquitetura
 
 > Plataforma gamificada de adivinhação de trechos literários  
-> Versão 1.0 — Arquitetura para MVP
+> Versão 1.0 - Arquitetura para MVP
 
 ---
 
@@ -27,26 +27,26 @@
 
 ## 1. Alerta Legal
 
-**Este é o maior risco do projeto. Não é detalhe — é o fundamento.**
+**Este é o maior risco do projeto. Não é detalhe - é o fundamento.**
 
 ### O problema real
 
-Usar trechos de livros comerciais em uma plataforma de entretenimento (especialmente monetizada) **não** é coberto automaticamente por fair use / uso justo, em nenhuma jurisdição. A doutrina de fair use (EUA) e as exceções similares no Brasil (Lei 9.610/98, Art. 46) cobrem crítica, comentário, educação, pesquisa — não jogos com monetização.
+Usar trechos de livros comerciais em uma plataforma de entretenimento (especialmente monetizada) **não** é coberto automaticamente por fair use / uso justo, em nenhuma jurisdição. A doutrina de fair use (EUA) e as exceções similares no Brasil (Lei 9.610/98, Art. 46) cobrem crítica, comentário, educação, pesquisa - não jogos com monetização.
 
 O risco não é teórico. A HarperCollins, Penguin Random House e outros grandes grupos têm histórico de ação legal agressiva contra usos não licenciados de seus catálogos.
 
 ### Estratégias para mitigar (em ordem de segurança)
 
-**Opção A — Domínio público (recomendada para MVP)**  
+**Opção A - Domínio público (recomendada para MVP)**  
 Obras com mais de 70 anos após a morte do autor estão em domínio público no Brasil e na maioria dos países. Isso inclui:
 - Todo o cânone da literatura ocidental até início do século XX
 - Machado de Assis, Eça de Queirós, Dostoiévski, Tolstói, Dickens, Austen, Kafka, etc.
 - Fontes: Project Gutenberg, Domínio Público (BR), Standard Ebooks
 
-**Opção B — Licenciamento ativo**  
+**Opção B - Licenciamento ativo**  
 Contatar editoras e autores independentes para licenciamento. Difícil para MVP, mas necessário para catálogo contemporâneo.
 
-**Opção C — Conteúdo gerado / sintético**  
+**Opção C - Conteúdo gerado / sintético**  
 Usar LLM para gerar trechos *no estilo de* autores (não extraídos de obras reais). Juridicamente mais seguro, mas perde a autenticidade do produto.
 
 **Limite prático de texto exibido**  
@@ -60,7 +60,7 @@ Mesmo em domínio público, exibir trechos muito longos pode ser problemático d
 
 ### Conceito central
 
-Um jogo diário (modelo Wordle/NYT) onde o usuário lê um trecho literário e tenta identificar a obra. Uma frase por dia, para todos os usuários, muda à meia-noite. O RAG serve exclusivamente para o **sistema de dicas progressivas** — não para seleção aleatória de frases.
+Um jogo diário (modelo Wordle/NYT) onde o usuário lê um trecho literário e tenta identificar a obra. Uma frase por dia, para todos os usuários, muda à meia-noite. O RAG serve exclusivamente para o **sistema de dicas progressivas** - não para seleção aleatória de frases.
 
 ### Mecânicas definidas
 
@@ -100,7 +100,7 @@ Por quê Next.js e não Remix ou Vite SPA?
 - API Routes: elimina a necessidade de um servidor separado no MVP
 - Ecosystem maduro para um desenvolvedor solo
 
-Alternativa rejeitada: Vue/Nuxt — ecosystem menor para UI components, curva maior para integrar com bibliotecas de IA.
+Alternativa rejeitada: Vue/Nuxt - ecosystem menor para UI components, curva maior para integrar com bibliotecas de IA.
 
 ### Backend
 
@@ -136,7 +136,7 @@ Redis para:
 
 **API da Anthropic (Claude) para geração de dicas e avaliação semântica**
 
-Para embeddings: **`text-embedding-3-small` da OpenAI** — mais barato que ada-002, suficiente para chunks literários.
+Para embeddings: **`text-embedding-3-small` da OpenAI** - mais barato que ada-002, suficiente para chunks literários.
 
 Custo estimado embeddings (100 livros de domínio público, ~5MB de texto cada):  
 `~500k tokens × $0.02/1M = ~$0.01 por livro` → custo de ingestão irrisório.
@@ -151,13 +151,13 @@ Custo de operação por dica solicitada (1 chamada Claude Haiku):
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                      FRONTEND                           │
-│         Next.js 14 — Vercel                             │
+│         Next.js 14 - Vercel                             │
 │  Landing | Game | Ranking | Profile | Admin             │
 └────────────────────┬────────────────────────────────────┘
                      │ HTTPS / REST
 ┌────────────────────▼────────────────────────────────────┐
 │                      BACKEND                            │
-│              FastAPI — Railway                          │
+│              FastAPI - Railway                          │
 │                                                         │
 │  ┌─────────────┐  ┌──────────────┐  ┌───────────────┐  │
 │  │  Auth API   │  │   Game API   │  │   Admin API   │  │
@@ -318,7 +318,7 @@ CREATE INDEX ON passages(book_id, used_on);
 
 A pergunta que o documento original não faz: *por que você precisa de RAG para selecionar o trecho do dia?*
 
-Você não precisa. Seleção aleatória de um trecho curado funciona perfeitamente — e é mais previsível, auditável e barato. RAG entra especificamente quando o usuário pede dica: o sistema busca contexto relevante do livro para informar a dica gerada pelo LLM. Isso é um uso correto de RAG.
+Você não precisa. Seleção aleatória de um trecho curado funciona perfeitamente - e é mais previsível, auditável e barato. RAG entra especificamente quando o usuário pede dica: o sistema busca contexto relevante do livro para informar a dica gerada pelo LLM. Isso é um uso correto de RAG.
 
 ### Pipeline de ingestão (offline)
 
@@ -380,17 +380,17 @@ Chama RAG e LLM          Gera dica offline
 
 Para lidar com variações ("Dom Casmurro" vs "dom casmurro" vs "Dom Casmurro de Machado de Assis"):
 
-**Nível 1 — Comparação fuzzy (free, implementar primeiro)**  
+**Nível 1 - Comparação fuzzy (free, implementar primeiro)**  
 ```python
 from rapidfuzz import fuzz
 score = fuzz.token_sort_ratio(user_answer.lower(), correct_title.lower())
 is_correct = score >= 85
 ```
 
-**Nível 2 — Embedding similarity (pago, implementar depois)**  
+**Nível 2 - Embedding similarity (pago, implementar depois)**  
 Calcular cosine similarity entre embedding da resposta do usuário e embedding do título correto. Threshold: 0.82.
 
-**Nível 3 — LLM judge (mais caro, para casos ambíguos)**  
+**Nível 3 - LLM judge (mais caro, para casos ambíguos)**  
 Usar apenas quando levels 1 e 2 discordarem.
 
 ### Classificação de dificuldade (durante ingestão)
@@ -438,12 +438,12 @@ SE ERRO:
 - Endpoint separado: `GET /challenges/history`
 - Retorna lista de desafios passados
 - Ao jogar um histórico: salva no banco com `is_historic = true`, sem atualizar XP ou ranking
-- UX: indicador visual claro "modo exploração — sem pontos"
+- UX: indicador visual claro "modo exploração - sem pontos"
 
 ### Proteção contra múltiplas tentativas
 
 - `UNIQUE(user_id, challenge_id)` no banco garante um game por desafio
-- Após submeter, o resultado é final — sem retentativas no desafio do dia
+- Após submeter, o resultado é final - sem retentativas no desafio do dia
 - Modo exploração: pode tentar quantas vezes quiser (sem consequências de ranking)
 
 ---
@@ -548,13 +548,13 @@ XP ganho por partida = passage.difficulty * 20 * hint_multiplier
 hint_multiplier = 0.5 se used_hint, 1.0 se não
 
 Níveis:
-  1 — Leitor Iniciante    (0 XP)
-  2 — Aprendiz Literário  (200 XP)
-  3 — Conhecedor          (600 XP)
-  4 — Bibliófilo          (1.500 XP)
-  5 — Erudito             (3.500 XP)
-  6 — Mestre das Letras   (8.000 XP)
-  7 — Guardião da Memória (20.000 XP)
+  1 - Leitor Iniciante    (0 XP)
+  2 - Aprendiz Literário  (200 XP)
+  3 - Conhecedor          (600 XP)
+  4 - Bibliófilo          (1.500 XP)
+  5 - Erudito             (3.500 XP)
+  6 - Mestre das Letras   (8.000 XP)
+  7 - Guardião da Memória (20.000 XP)
 ```
 
 ### Streak
@@ -593,7 +593,7 @@ Usar exclusivamente prepared statements via SQLAlchemy ORM. Nunca concatenar str
 **XSS**  
 - Todos os inputs sanitizados no backend (bleach library)
 - CSP headers no Next.js (via next.config.js)
-- React escapa output por padrão — não usar dangerouslySetInnerHTML
+- React escapa output por padrão - não usar dangerouslySetInnerHTML
 
 **Rate Limiting**  
 ```python
@@ -825,7 +825,7 @@ bookguess/
 
 ## 14. Código Inicial
 
-### Backend — main.py
+### Backend - main.py
 
 ```python
 from fastapi import FastAPI
@@ -861,7 +861,7 @@ def health():
     return {"status": "ok"}
 ```
 
-### Backend — game_service.py (lógica principal)
+### Backend - game_service.py (lógica principal)
 
 ```python
 from datetime import date
@@ -969,7 +969,7 @@ def request_hint(user_id: str, db: Session) -> str:
     return hint
 ```
 
-### Backend — hint_generator.py (RAG)
+### Backend - hint_generator.py (RAG)
 
 ```python
 from anthropic import Anthropic
@@ -1028,7 +1028,7 @@ Gere UMA dica útil que:
     return message.content[0].text
 ```
 
-### Frontend — PassageCard.tsx
+### Frontend - PassageCard.tsx
 
 ```tsx
 "use client"
@@ -1108,7 +1108,7 @@ export function PassageCard({ challenge }: PassageCardProps) {
             {result.is_correct ? `✓ Correto! +${result.points_earned} pts` : "✗ Incorreto"}
           </p>
           <p className="text-sm mt-1">
-            {result.correct_answer.title} — {result.correct_answer.author}
+            {result.correct_answer.title} - {result.correct_answer.author}
           </p>
         </div>
       ) : (
