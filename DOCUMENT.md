@@ -7,14 +7,14 @@
 
 ## Índice
 
-1. [Alerta Legal — Leia Primeiro](#1-alerta-legal)
+1. [Alerta Legal - Leia Primeiro](#1-alerta-legal)
 2. [Visão do Produto](#2-visão-do-produto)
 3. [Decisões de Stack](#3-decisões-de-stack)
 4. [Arquitetura do Sistema](#4-arquitetura-do-sistema)
 5. [Modelagem de Dados](#5-modelagem-de-dados)
 6. [Pipeline RAG e IA](#6-pipeline-rag-e-ia)
 7. [Mecânicas de Jogo](#7-mecânicas-de-jogo)
-8. [APIs — Endpoints](#8-apis)
+8. [APIs - Endpoints](#8-apis)
 9. [Gamificação](#9-gamificação)
 10. [Segurança](#10-segurança)
 11. [DevOps e Deploy](#11-devops-e-deploy)
