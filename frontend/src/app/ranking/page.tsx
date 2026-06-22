@@ -14,6 +14,7 @@ const PODIUM = [
     rank: 2,
     height: "h-24",
     bg: "from-slate-400/20 to-slate-400/5 border-slate-400/30",
+    borderColor: "border-slate-400/30",
     text: "text-slate-300",
     label: "text-slate-300",
     iconColor: "text-slate-300",
@@ -28,6 +29,7 @@ const PODIUM = [
     rank: 1,
     height: "h-32",
     bg: "from-yellow-500/25 to-yellow-500/5 border-yellow-500/40",
+    borderColor: "border-yellow-500/40",
     text: "text-yellow-400",
     label: "text-yellow-400",
     iconColor: "text-yellow-400",
@@ -42,6 +44,7 @@ const PODIUM = [
     rank: 3,
     height: "h-16",
     bg: "from-amber-600/20 to-amber-600/5 border-amber-600/30",
+    borderColor: "border-amber-600/30",
     text: "text-amber-500",
     label: "text-amber-500",
     iconColor: "text-amber-500",
@@ -77,6 +80,7 @@ export default function RankingPage() {
     )
   }
 
+  const top3Raw = ranking.slice(0, 3)
   // Associate each of the top 3 players with their correct config
   const top3WithConfig = top3Raw.map((item, index) => {
     const rank = index + 1
@@ -157,7 +161,7 @@ export default function RankingPage() {
 
                   {/* Podium block beneath */}
                   <div
-                    className={`w-full ${cfg.height} ${cfg.podiumBg} border border-t-0 ${cfg.bg.split(" ")[2]} rounded-b-xl flex items-end justify-center pb-1.5`}
+                    className={`w-full ${cfg.height} ${cfg.podiumBg} border border-t-0 ${cfg.borderColor} rounded-b-xl flex items-end justify-center pb-1.5`}
                   >
                     <span className={`text-2xl font-black ${cfg.text} opacity-30 select-none`}>
                       {cfg.rank}
