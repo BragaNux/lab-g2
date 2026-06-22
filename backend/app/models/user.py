@@ -18,5 +18,5 @@ class User(Base):
     last_played = Column(Date, nullable=True)
     is_premium = Column(Boolean, default=False)
     is_admin = Column(Boolean, default=False)
-    allow_ai = Column(Boolean, default=True)
+    allow_ai = Column(Boolean, default=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
