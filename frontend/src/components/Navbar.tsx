@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { BookOpen, Trophy, Clock, User, Menu, X, LogOut, Shield } from "lucide-react"
 import { useState, useEffect } from "react"
@@ -44,8 +45,14 @@ export function Navbar() {
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/85 backdrop-blur-md">
       <nav className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 group">
-          <span className="text-xl transition-transform group-hover:rotate-6">📚</span>
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <Image
+            src="/icon_bookguess.png"
+            alt="BookGuess"
+            width={30}
+            height={30}
+            className="rounded-lg transition-transform group-hover:scale-110"
+          />
           <span className="font-bold text-lg tracking-tight">
             <span className="text-primary">Book</span>Guess
           </span>

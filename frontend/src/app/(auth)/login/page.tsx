@@ -3,11 +3,12 @@
 import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { api } from "@/lib/api"
 import { setToken } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Loader2, Mail, Lock, BookOpen } from "lucide-react"
+import { Loader2, Mail, Lock } from "lucide-react"
 import { Suspense } from "react"
 
 function LoginForm() {
@@ -41,7 +42,9 @@ function LoginForm() {
       <div className="hidden lg:flex lg:w-1/2 bg-card border-r border-border/60 flex-col items-center justify-center p-12 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent" />
         <div className="relative z-10 text-center space-y-6 max-w-xs">
-          <div className="text-7xl animate-float" style={{ animationDuration: "4s" }}>📚</div>
+          <div className="animate-float" style={{ animationDuration: "4s" }}>
+            <Image src="/icon_bookguess.png" alt="BookGuess" width={120} height={120} className="rounded-2xl mx-auto shadow-2xl shadow-primary/20" />
+          </div>
           <div>
             <h1 className="text-3xl font-bold tracking-tight mb-2">
               <span className="text-primary">Book</span>Guess
@@ -70,7 +73,7 @@ function LoginForm() {
         <div className="w-full max-w-sm animate-slide-up">
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-8">
-            <span className="text-4xl block mb-2">📚</span>
+            <Image src="/icon_bookguess.png" alt="BookGuess" width={64} height={64} className="rounded-xl mx-auto mb-3 shadow-lg shadow-primary/20" />
             <h1 className="text-2xl font-bold">
               <span className="text-primary">Book</span>Guess
             </h1>

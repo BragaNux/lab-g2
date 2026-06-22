@@ -17,6 +17,15 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "BookGuess — Adivinhe o Livro",
   description: "Desafio literário diário: leia o trecho e descubra a obra",
+  icons: {
+    icon: "/icon_bookguess.png",
+    apple: "/icon_bookguess.png",
+  },
+  openGraph: {
+    title: "BookGuess",
+    description: "Desafio literário diário: leia o trecho e descubra a obra",
+    images: ["/icon_bookguess.png"],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
