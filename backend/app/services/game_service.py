@@ -65,11 +65,10 @@ def submit_answer(user_id: str, challenge: DailyChallenge, answer: str, used_hin
     )
     db.add(game)
 
-    if points > 0:
-        user = db.query(User).filter(User.id == user_id).first()
-        if user:
-            user.xp += points
-            _update_streak(user)
+    user = db.query(User).filter(User.id == user_id).first()
+    if points > 0 and user:
+        user.xp += points
+        _update_streak(user)
 
     db.commit()
 
@@ -80,6 +79,8 @@ def submit_answer(user_id: str, challenge: DailyChallenge, answer: str, used_hin
             "title": challenge.passage.book.title,
             "author": challenge.passage.book.author,
         },
+        "new_streak": user.streak if user else 0,
+        "new_xp": user.xp if user else 0,
     }
 
 

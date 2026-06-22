@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import type { SubmitResult } from "@/types"
 import { Button } from "@/components/ui/button"
-import { CheckCircle2, XCircle, BookOpen, Trophy, RotateCcw, User } from "lucide-react"
+import { CheckCircle2, XCircle, BookOpen, Trophy, RotateCcw, User, Flame } from "lucide-react"
+
 
 interface Props {
   result: SubmitResult
@@ -67,9 +68,54 @@ function XPCounter({ target }: { target: number }) {
   return <span>{display}</span>
 }
 
+/* ── Animated Streak counter ── */
+function StreakCounter({ target }: { target: number }) {
+  const [display, setDisplay] = useState(Math.max(0, target - 1))
+  const [bouncing, setBouncing] = useState(false)
+
+  useEffect(() => {
+    const delayTimer = setTimeout(() => {
+      let start = Math.max(0, target - 1)
+      if (start === target) {
+        setBouncing(true)
+        return
+      }
+      
+      const duration = 1000
+      const startTime = performance.now()
+
+      function tick(now: number) {
+        const elapsed = now - startTime
+        const progress = Math.min(elapsed / duration, 1)
+        const eased = 1 - Math.pow(1 - progress, 3)
+        const currentVal = Math.round(start + eased * (target - start))
+        setDisplay(currentVal)
+        
+        if (progress < 1) {
+          requestAnimationFrame(tick)
+        } else {
+          setBouncing(true)
+        }
+      }
+      const animId = requestAnimationFrame(tick)
+      return () => cancelAnimationFrame(animId)
+    }, 1000)
+
+    return () => clearTimeout(delayTimer)
+  }, [target])
+
+  return (
+    <span className={`inline-block transition-transform duration-300 ${bouncing ? "scale-125 font-black text-orange-400 animate-bounce" : "font-extrabold text-orange-500"}`}>
+      {display}
+    </span>
+  )
+}
+
+
 export function ResultModal({ result }: Props) {
-  const { is_correct, points_earned, correct_answer } = result
+  const { is_correct, points_earned, correct_answer, new_streak } = result
   const [visible, setVisible] = useState(false)
+
 
   useEffect(() => {
     // tiny delay so the entrance feels deliberate
@@ -134,7 +180,27 @@ export function ResultModal({ result }: Props) {
           {/* Divider */}
           <div className={`h-px ${is_correct ? "bg-emerald-500/20" : "bg-destructive/20"}`} />
 
+          {/* Duolingo Streak Flame block */}
+          {is_correct && new_streak !== undefined && new_streak > 0 && (
+            <div className="rounded-2xl bg-gradient-to-b from-orange-950/40 to-background/50 border border-orange-500/20 p-4 text-center space-y-2 animate-scale-in relative overflow-hidden">
+              <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "radial-gradient(circle, rgba(249,115,22,0.12) 0%, transparent 70%)" }} />
+              <div className="relative flex justify-center py-2">
+                <div className="absolute inset-0 w-16 h-16 bg-orange-500/20 rounded-full blur-xl mx-auto animate-pulse" />
+                <Flame className="w-16 h-16 text-orange-500 fill-orange-500 drop-shadow-[0_0_15px_rgba(249,115,22,0.8)] relative z-10 animate-float" />
+              </div>
+              <div className="space-y-0.5">
+                <h4 className="text-2xl font-black text-orange-400 tracking-tight">
+                  <StreakCounter target={new_streak} /> DIAS!
+                </h4>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-orange-200/70">
+                  Ofensiva diária ativa!
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Book reveal */}
+
           <div className="rounded-2xl bg-background/60 border border-border/40 p-4 animate-slide-up-delay space-y-1">
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-2">
               A obra era

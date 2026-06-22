@@ -22,7 +22,10 @@ export interface SubmitResult {
   is_correct: boolean
   points_earned: number
   correct_answer: { title: string; author: string }
+  new_streak?: number
+  new_xp?: number
 }
+
 
 export interface RankingItem {
   position: number
@@ -37,7 +40,10 @@ export interface HistoryChallenge {
   id: string
   date: string
   difficulty: number
+  completed?: boolean
+  is_correct?: boolean | null
 }
+
 
 export type Level = "Leitor" | "Bibliófilo" | "Erudito"
 
@@ -46,3 +52,15 @@ export function getLevel(xp: number): Level {
   if (xp >= 300) return "Bibliófilo"
   return "Leitor"
 }
+
+export function getDifficultyLabel(difficulty: number): string {
+  switch (difficulty) {
+    case 1: return "Muito Fácil"
+    case 2: return "Fácil"
+    case 3: return "Médio"
+    case 4: return "Difícil"
+    case 5: return "Muito Difícil"
+    default: return "Médio"
+  }
+}
+

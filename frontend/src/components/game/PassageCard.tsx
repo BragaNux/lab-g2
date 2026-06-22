@@ -2,12 +2,14 @@
 
 import { useState } from "react"
 import { api } from "@/lib/api"
+import { getDifficultyLabel } from "@/types"
 import type { Challenge, SubmitResult } from "@/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { HintButton } from "./HintButton"
 import { ResultModal } from "./ResultModal"
-import { Loader2 } from "lucide-react"
+import { Loader2, RotateCcw } from "lucide-react"
+
 
 interface Props {
   challenge: Challenge
@@ -32,6 +34,25 @@ export function PassageCard({ challenge, mode = "today" }: Props) {
   const [result, setResult] = useState<SubmitResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [alreadyPlayed, setAlreadyPlayed] = useState(challenge.already_played)
+  const [resetting, setResetting] = useState(false)
+
+  async function handleResetHistory() {
+    setResetting(true)
+    setError("")
+    try {
+      await api.post(`/challenge/history/${challenge.id}/reset`)
+      setAlreadyPlayed(false)
+      setResult(null)
+      setAnswer("")
+      setHint(null)
+    } catch (err: any) {
+      setError(err.response?.data?.detail || "Erro ao resetar desafio.")
+    } finally {
+      setResetting(false)
+    }
+  }
+
 
   const submitUrl = mode === "history"
     ? `/challenge/history/${challenge.id}/play`
@@ -59,10 +80,10 @@ export function PassageCard({ challenge, mode = "today" }: Props) {
     }
   }
 
-  if (challenge.already_played && !result) {
+  if (alreadyPlayed && !result) {
     return (
       <div className="max-w-2xl w-full mx-auto animate-scale-in">
-        <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-3">
+        <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-4">
           <span className="text-4xl block">📖</span>
           <p className="text-lg font-semibold">Desafio já concluído</p>
           <p className="text-muted-foreground text-sm">
@@ -70,10 +91,28 @@ export function PassageCard({ challenge, mode = "today" }: Props) {
               ? "Você completou o desafio de hoje. Volte amanhã!"
               : "Você já jogou este desafio anteriormente."}
           </p>
+          {mode === "history" && (
+            <div className="pt-2">
+              <Button
+                onClick={handleResetHistory}
+                disabled={resetting}
+                variant="outline"
+                className="gap-2 border-primary/30 text-primary hover:bg-primary/10 transition-all"
+              >
+                {resetting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RotateCcw className="w-4 h-4" />
+                )}
+                Jogar Novamente (Não vale XP)
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     )
   }
+
 
   return (
     <div className="max-w-2xl w-full mx-auto animate-slide-up">
@@ -82,8 +121,11 @@ export function PassageCard({ challenge, mode = "today" }: Props) {
         <div className="px-4 sm:px-6 py-4 border-b border-border/60 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Stars value={challenge.difficulty} />
-            <span className="text-xs text-muted-foreground">Dificuldade {challenge.difficulty}/5</span>
+            <span className="text-xs text-muted-foreground">
+              Dificuldade: {getDifficultyLabel(challenge.difficulty)} ({challenge.difficulty}/5)
+            </span>
           </div>
+
           <div className="flex items-center gap-1.5">
             <span className="text-xs text-muted-foreground">Vale</span>
             <span className="text-sm font-bold text-primary">{pointsAvailable} XP</span>

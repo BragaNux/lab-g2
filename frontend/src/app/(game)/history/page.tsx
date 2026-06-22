@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { api } from "@/lib/api"
 import { isLoggedIn } from "@/lib/auth"
+import { getDifficultyLabel } from "@/types"
 import type { HistoryChallenge, User } from "@/types"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Clock, Lock, ChevronRight, Loader2, Crown } from "lucide-react"
+import { Clock, Lock, ChevronRight, Loader2, Crown, CheckCircle2, XCircle } from "lucide-react"
+
 
 function Stars({ value, max = 5 }: { value: number; max?: number }) {
   return (
@@ -128,11 +130,34 @@ export default function HistoryPage() {
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                       <p className="font-semibold text-sm truncate">Desafio do Dia {formatFullDate(c.date)}</p>
+                      {c.completed ? (
+                        c.is_correct ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                            Acertou
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/10 border border-red-500/20 text-red-400">
+                            <XCircle className="w-3 h-3 text-red-400" />
+                            Errou
+                          </span>
+                        )
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-muted border border-border text-muted-foreground">
+                          Não jogado
+                        </span>
+                      )}
                     </div>
-                    <Stars value={c.difficulty} />
+                    <div className="flex items-center gap-2">
+                      <Stars value={c.difficulty} />
+                      <span className="text-[11px] text-muted-foreground font-medium">
+                        {getDifficultyLabel(c.difficulty)}
+                      </span>
+                    </div>
                   </div>
+
 
                   <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
                 </div>

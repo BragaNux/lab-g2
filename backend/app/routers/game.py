@@ -137,14 +137,26 @@ def history(
         .limit(30)
         .all()
     )
+    
+    challenge_ids = [c.id for c in challenges]
+    user_games = db.query(Game).filter(
+        Game.user_id == current_user.id,
+        Game.challenge_id.in_(challenge_ids)
+    ).all()
+    
+    games_map = {g.challenge_id: g for g in user_games}
+    
     return [
         HistoryChallengeItem(
             id=str(c.id),
             date=c.date,
             difficulty=c.passage.difficulty,
+            completed=c.id in games_map,
+            is_correct=games_map[c.id].is_correct if c.id in games_map else None,
         )
         for c in challenges
     ]
+
 
 
 @router.get("/history/{challenge_id}", response_model=ChallengeResponse)
@@ -240,4 +252,22 @@ def history_hint(
             db=db,
         )
     return HintResponse(hint=hint_text)
+
+
+@router.post("/history/{challenge_id}/reset")
+def reset_history_challenge(
+    challenge_id: str,
+    current_user: User = Depends(require_premium),
+    db: Session = Depends(get_db),
+):
+    challenge = get_challenge_by_id(challenge_id, db)
+    game = db.query(Game).filter(
+        Game.user_id == current_user.id,
+        Game.challenge_id == challenge.id,
+    ).first()
+    if game:
+        db.delete(game)
+        db.commit()
+    return {"message": "Desafio do histórico resetado. Você pode jogar novamente por diversão!"}
+
 

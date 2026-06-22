@@ -21,6 +21,8 @@ class SubmitResponse(BaseModel):
     is_correct: bool
     points_earned: int
     correct_answer: dict
+    new_streak: int = 0
+    new_xp: int = 0
 
 
 class HintResponse(BaseModel):
@@ -31,3 +33,6 @@ class HistoryChallengeItem(BaseModel):
     id: str
     date: date
     difficulty: int
+    completed: bool = False
+    is_correct: bool | None = None
+

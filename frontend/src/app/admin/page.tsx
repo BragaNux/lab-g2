@@ -7,8 +7,9 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Shield, Brain, Crown, Award, BookPlus, FileText, CalendarPlus, Users, RefreshCw, Flame } from "lucide-react"
+import { Loader2, Shield, Brain, Crown, Award, BookPlus, FileText, CalendarPlus, Users, RefreshCw, Flame, Trash2 } from "lucide-react"
 import type { User } from "@/types"
+
 
 type Tab = "ingest" | "passage" | "challenge" | "users"
 
@@ -97,9 +98,15 @@ export default function AdminPage() {
       <div className="animate-fade-in">
         {tab === "ingest"    && <IngestForm />}
         {tab === "passage"   && <PassageForm />}
-        {tab === "challenge" && <ChallengeForm />}
+        {tab === "challenge" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <ChallengeForm />
+            <ResetChallengeBox />
+          </div>
+        )}
         {tab === "users"     && <UsersManagement currentUser={currentUser} />}
       </div>
+
     </main>
   )
 }
@@ -272,8 +279,47 @@ function ChallengeForm() {
   )
 }
 
+/* ───── Reset Challenge Box ───── */
+function ResetChallengeBox() {
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState<string | null>(null)
+  const [error, setError] = useState("")
+
+  async function handleReset() {
+    if (!confirm("Tem certeza que deseja resetar o desafio de hoje? Isso apagará todas as tentativas jogadas por todos os usuários para o dia de hoje.")) {
+      return
+    }
+    setLoading(true)
+    setError("")
+    setResult(null)
+    try {
+      const res = await api.post("/admin/challenges/today/reset")
+      setResult(res.data.message || "Desafio de hoje resetado com sucesso!")
+    } catch (err: any) {
+      setError(err.response?.data?.detail || "Erro ao resetar desafio.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Panel title="Resetar Desafio de Hoje (Testes)" description="Apaga todas as tentativas de hoje no banco, subtrai o XP obtido hoje de quem jogou, decrementa a ofensiva e sorteia outro trecho do histórico para hoje (trocando suas datas). Útil para testar.">
+
+      <div className="space-y-4 max-w-md">
+        {error  && <p className="text-sm text-destructive font-medium bg-destructive/10 rounded-lg px-3 py-2">{error}</p>}
+        {result && <p className="text-sm text-green-500 font-medium bg-green-500/10 rounded-lg px-3 py-2">{result}</p>}
+        <Button onClick={handleReset} disabled={loading} variant="destructive" className="w-full sm:w-auto h-11 px-8 gap-2 bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-md transition-all">
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+          Resetar e Colocar Novo Desafio
+        </Button>
+      </div>
+    </Panel>
+  )
+}
+
 /* ───── Users Management ───── */
 function UsersManagement({ currentUser }: { currentUser: User }) {
+
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
@@ -302,6 +348,42 @@ function UsersManagement({ currentUser }: { currentUser: User }) {
     } finally { setTogglingId(null) }
   }
 
+  async function handleResetAll() {
+    if (!confirm("ATENÇÃO: Tem certeza que deseja resetar TODOS os usuários?")) {
+      return
+    }
+    if (!confirm("CONFIRMAÇÃO ADICIONAL: Isso apagará permanentemente o XP, as ofensivas, e todo o histórico de jogo de todos os usuários do sistema. Continuar?")) {
+      return
+    }
+    setLoading(true)
+    setError("")
+    try {
+      await api.post("/admin/users/reset-stats")
+      await fetchUsers()
+      alert("Todos os usuários e o ranking foram resetados do zero!")
+    } catch (err: any) {
+      setError(err.response?.data?.detail || "Erro ao resetar usuários.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleResetUser(userId: string, username: string) {
+    if (!confirm(`Tem certeza que deseja resetar o usuário "${username}" do zero? Isso apagará seu XP, sua ofensiva e todas as suas tentativas de jogo.`)) {
+      return
+    }
+    setTogglingId(`${userId}-reset`)
+    try {
+      await api.post(`/admin/users/reset-stats?user_id=${userId}`)
+      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, xp: 0, streak: 0 } : u))
+      alert(`Usuário ${username} foi resetado com sucesso!`)
+    } catch (err: any) {
+      alert(err.response?.data?.detail || "Erro ao resetar usuário.")
+    } finally {
+      setTogglingId(null)
+    }
+  }
+
   const filtered = users.filter((u) =>
     u.username.toLowerCase().includes(search.toLowerCase()) ||
     u.email.toLowerCase().includes(search.toLowerCase())
@@ -312,18 +394,24 @@ function UsersManagement({ currentUser }: { currentUser: User }) {
       title="Gerenciar Usuários"
       description="Controle as permissões de cada usuário: acesso à IA, status premium e privilégios de administrador."
     >
-      {/* Search + refresh */}
-      <div className="flex gap-2 mb-5">
+      {/* Search + refresh + reset all */}
+      <div className="flex flex-col sm:flex-row gap-2 mb-5">
         <Input
           placeholder="Buscar por usuário ou e-mail..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="flex-1"
         />
-        <Button onClick={fetchUsers} variant="outline" disabled={loading} className="shrink-0 gap-2">
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-          <span className="hidden sm:inline">Atualizar</span>
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={fetchUsers} variant="outline" disabled={loading} className="flex-1 sm:flex-initial gap-2">
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            <span>Atualizar</span>
+          </Button>
+          <Button onClick={handleResetAll} variant="destructive" disabled={loading} className="flex-1 sm:flex-initial gap-2 bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <Trash2 className="w-4 h-4" />
+            <span>Resetar Geral</span>
+          </Button>
+        </div>
       </div>
 
       {error && <p className="text-sm text-destructive mb-4">{error}</p>}
@@ -337,7 +425,7 @@ function UsersManagement({ currentUser }: { currentUser: User }) {
       ) : (
         <div className="rounded-xl border border-border/50 overflow-hidden">
           {/* Table header */}
-          <div className="hidden md:grid grid-cols-[1fr_200px_180px] bg-muted/50 px-5 py-2.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide border-b border-border/40">
+          <div className="hidden md:grid grid-cols-[1fr_200px_260px] bg-muted/50 px-5 py-2.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide border-b border-border/40">
             <span>Usuário</span>
             <span>Status</span>
             <span>Ações</span>
@@ -347,7 +435,7 @@ function UsersManagement({ currentUser }: { currentUser: User }) {
           {filtered.map((u, i) => (
             <div
               key={u.id}
-              className={`grid md:grid-cols-[1fr_200px_180px] gap-3 px-5 py-4 items-center ${
+              className={`grid md:grid-cols-[1fr_200px_260px] gap-3 px-5 py-4 items-center ${
                 i < filtered.length - 1 ? "border-b border-border/30" : ""
               } hover:bg-muted/30 transition-colors`}
             >
@@ -392,6 +480,17 @@ function UsersManagement({ currentUser }: { currentUser: User }) {
                   {togglingId === `${u.id}-premium` ? <Loader2 className="w-3 h-3 animate-spin" /> : <Crown className="w-3 h-3" />}
                   {u.is_premium ? "Premium" : "Free"}
                 </Button>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={!!togglingId}
+                  onClick={() => handleResetUser(u.id, u.username)}
+                  className="h-7 text-xs px-3 gap-1 border-destructive/40 text-destructive hover:bg-destructive/10 transition-all"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  Resetar
+                </Button>
               </div>
             </div>
           ))}
@@ -404,3 +503,4 @@ function UsersManagement({ currentUser }: { currentUser: User }) {
     </Panel>
   )
 }
+
