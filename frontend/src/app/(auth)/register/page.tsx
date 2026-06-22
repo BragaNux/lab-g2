@@ -12,7 +12,7 @@ import { Loader2, User, Mail, Lock, Eye, EyeOff, X, BookOpen, Shield, ScrollText
 /* ─────────────────────────────────────────
    Terms & Privacy Dialog
 ───────────────────────────────────────── */
-function TermsDialog({ onClose }: { onClose: () => void }) {
+function TermsDialog({ onClose, onAccept }: { onClose: () => void; onAccept: () => void }) {
   return (
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
@@ -171,7 +171,7 @@ function TermsDialog({ onClose }: { onClose: () => void }) {
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-border/50 shrink-0">
-          <Button onClick={onClose} className="w-full h-10">
+          <Button onClick={() => { onAccept(); onClose() }} className="w-full h-10">
             Entendi e Aceito
           </Button>
         </div>
@@ -238,7 +238,7 @@ export default function RegisterPage() {
 
   return (
     <>
-      {showTerms && <TermsDialog onClose={() => setShowTerms(false)} />}
+      {showTerms && <TermsDialog onClose={() => setShowTerms(false)} onAccept={() => setTermsAccepted(true)} />}
 
       <div className="min-h-screen flex">
         {/* Left panel */}
