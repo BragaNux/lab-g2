@@ -7,11 +7,14 @@ import Image from "next/image"
 import { api } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Loader2, User, Mail, Lock } from "lucide-react"
+import { Loader2, User, Mail, Lock, Eye, EyeOff } from "lucide-react"
 
 export default function RegisterPage() {
   const router = useRouter()
   const [form, setForm] = useState({ username: "", email: "", password: "" })
+  const [confirm, setConfirm] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
@@ -22,6 +25,12 @@ export default function RegisterPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError("")
+
+    if (form.password !== confirm) {
+      setError("As senhas não coincidem.")
+      return
+    }
+
     setLoading(true)
     try {
       await api.post("/auth/register", form)
@@ -33,6 +42,8 @@ export default function RegisterPage() {
       setLoading(false)
     }
   }
+
+  const passwordsMatch = confirm === "" || form.password === confirm
 
   return (
     <div className="min-h-screen flex">
@@ -53,7 +64,7 @@ export default function RegisterPage() {
           </div>
           <blockquote className="text-sm italic text-muted-foreground border-l-2 border-primary/40 pl-3 text-left">
             &ldquo;Um leitor vive mil vidas antes de morrer. O homem que nunca lê vive apenas uma.&rdquo;
-            <footer className="mt-1 text-xs not-italic text-muted-foreground/60">— George R.R. Martin</footer>
+            <footer className="mt-1 text-xs not-italic text-muted-foreground/60">George R.R. Martin</footer>
           </blockquote>
         </div>
       </div>
@@ -74,8 +85,9 @@ export default function RegisterPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Username */}
             <div className="relative">
-              <User className="absolute left-3 top-3.5 w-4 h-4 text-muted-foreground" />
+              <User className="absolute left-3 top-3.5 w-4 h-4 text-muted-foreground pointer-events-none" />
               <Input
                 placeholder="Nome de usuário"
                 value={form.username}
@@ -85,8 +97,10 @@ export default function RegisterPage() {
                 className="pl-9 h-11 bg-muted/40 border-border/60 focus:border-primary/50"
               />
             </div>
+
+            {/* Email */}
             <div className="relative">
-              <Mail className="absolute left-3 top-3.5 w-4 h-4 text-muted-foreground" />
+              <Mail className="absolute left-3 top-3.5 w-4 h-4 text-muted-foreground pointer-events-none" />
               <Input
                 type="email"
                 placeholder="E-mail"
@@ -96,25 +110,67 @@ export default function RegisterPage() {
                 className="pl-9 h-11 bg-muted/40 border-border/60 focus:border-primary/50"
               />
             </div>
+
+            {/* Password */}
             <div className="relative">
-              <Lock className="absolute left-3 top-3.5 w-4 h-4 text-muted-foreground" />
+              <Lock className="absolute left-3 top-3.5 w-4 h-4 text-muted-foreground pointer-events-none" />
               <Input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="Senha (mín. 6 caracteres)"
                 value={form.password}
                 onChange={(e) => set("password", e.target.value)}
                 required
                 minLength={6}
-                className="pl-9 h-11 bg-muted/40 border-border/60 focus:border-primary/50"
+                className="pl-9 pr-10 h-11 bg-muted/40 border-border/60 focus:border-primary/50"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3 top-3.5 text-muted-foreground hover:text-foreground transition-colors"
+                tabIndex={-1}
+                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
+
+            {/* Confirm Password */}
+            <div className="relative">
+              <Lock className="absolute left-3 top-3.5 w-4 h-4 text-muted-foreground pointer-events-none" />
+              <Input
+                type={showConfirm ? "text" : "password"}
+                placeholder="Confirmar senha"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                required
+                className={`pl-9 pr-10 h-11 bg-muted/40 border-border/60 focus:border-primary/50 transition-colors ${
+                  !passwordsMatch ? "border-destructive/60 focus:border-destructive/60" : ""
+                }`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm((v) => !v)}
+                className="absolute right-3 top-3.5 text-muted-foreground hover:text-foreground transition-colors"
+                tabIndex={-1}
+                aria-label={showConfirm ? "Ocultar confirmação" : "Mostrar confirmação"}
+              >
+                {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+
+            {/* Mismatch hint */}
+            {!passwordsMatch && (
+              <p className="text-xs text-destructive -mt-2 animate-fade-in">As senhas não coincidem.</p>
+            )}
+
             {error && (
               <p className="text-sm text-destructive animate-fade-in">{error}</p>
             )}
+
             <Button
               type="submit"
               className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-md shadow-primary/20"
-              disabled={loading}
+              disabled={loading || !passwordsMatch}
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Criar Conta"}
             </Button>

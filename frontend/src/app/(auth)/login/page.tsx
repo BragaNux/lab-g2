@@ -8,7 +8,7 @@ import { api } from "@/lib/api"
 import { setToken } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Loader2, Mail, Lock } from "lucide-react"
+import { Loader2, Mail, Lock, Eye, EyeOff } from "lucide-react"
 import { Suspense } from "react"
 
 function LoginForm() {
@@ -18,6 +18,7 @@ function LoginForm() {
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
@@ -103,15 +104,24 @@ function LoginForm() {
               />
             </div>
             <div className="relative">
-              <Lock className="absolute left-3 top-3.5 w-4 h-4 text-muted-foreground" />
+              <Lock className="absolute left-3 top-3.5 w-4 h-4 text-muted-foreground pointer-events-none" />
               <Input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="Senha"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="pl-9 h-11 bg-muted/40 border-border/60 focus:border-primary/50"
+                className="pl-9 pr-10 h-11 bg-muted/40 border-border/60 focus:border-primary/50"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3 top-3.5 text-muted-foreground hover:text-foreground transition-colors"
+                tabIndex={-1}
+                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
             {error && (
               <p className="text-sm text-destructive animate-fade-in">{error}</p>

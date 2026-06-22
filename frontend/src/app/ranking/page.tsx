@@ -48,20 +48,20 @@ export default function RankingPage() {
 
       {/* Top 3 podium */}
       {top3.length > 0 && (
-        <div className="grid grid-cols-3 gap-3 mb-6 animate-slide-up-delay">
+        <div className="grid grid-cols-3 gap-2 mb-6 animate-slide-up-delay">
           {top3.map((item, i) => (
             <div
               key={item.user_id}
-              className={`rounded-2xl border bg-gradient-to-b p-4 text-center ${PODIUM_COLORS[i]} ${
+              className={`rounded-2xl border bg-gradient-to-b p-3 text-center ${PODIUM_COLORS[i]} ${
                 item.is_me ? "ring-2 ring-primary/40" : ""
               }`}
             >
-              <div className="text-3xl mb-2">{MEDAL[i]}</div>
-              <p className="font-bold text-sm truncate text-foreground">{item.username}</p>
-              {item.is_me && <p className="text-xs text-primary mt-0.5">(você)</p>}
-              <p className="text-xs text-muted-foreground mt-1">{getLevel(item.xp)}</p>
-              <p className="text-base font-black mt-2">{item.xp}</p>
-              <p className="text-xs text-muted-foreground">XP</p>
+              <div className="text-2xl mb-1">{MEDAL[i]}</div>
+              <p className="font-bold text-xs truncate text-foreground">{item.username}</p>
+              {item.is_me && <p className="text-[10px] text-primary mt-0.5">(você)</p>}
+              <p className="text-[10px] text-muted-foreground mt-1 truncate">{getLevel(item.xp)}</p>
+              <p className="text-sm font-black mt-1">{item.xp}</p>
+              <p className="text-[10px] text-muted-foreground">XP</p>
             </div>
           ))}
         </div>

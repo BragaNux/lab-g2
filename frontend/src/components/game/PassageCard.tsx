@@ -79,7 +79,7 @@ export function PassageCard({ challenge, mode = "today" }: Props) {
     <div className="max-w-2xl w-full mx-auto animate-slide-up">
       <div className="rounded-2xl border border-border bg-card shadow-xl shadow-black/20 overflow-hidden">
         {/* Header bar */}
-        <div className="px-6 py-4 border-b border-border/60 flex items-center justify-between">
+        <div className="px-4 sm:px-6 py-4 border-b border-border/60 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Stars value={challenge.difficulty} />
             <span className="text-xs text-muted-foreground">Dificuldade {challenge.difficulty}/5</span>
@@ -91,12 +91,12 @@ export function PassageCard({ challenge, mode = "today" }: Props) {
         </div>
 
         {/* Passage */}
-        <div className="px-6 py-7">
+        <div className="px-4 sm:px-6 py-6">
           <blockquote className="relative">
             <span className="absolute -top-4 -left-1 text-6xl text-primary/20 font-literary leading-none select-none">
               &ldquo;
             </span>
-            <p className="font-literary text-xl italic leading-relaxed text-foreground/90 pl-4 relative z-10">
+            <p className="font-literary text-lg sm:text-xl italic leading-relaxed text-foreground/90 pl-4 relative z-10">
               {challenge.passage_text}
             </p>
             <span className="text-primary/20 font-literary text-4xl leading-none select-none float-right -mb-4">
@@ -120,14 +120,14 @@ export function PassageCard({ challenge, mode = "today" }: Props) {
         )}
 
         {/* Footer: input / result */}
-        <div className="px-6 pb-6">
+        <div className="px-4 sm:px-6 pb-6">
           {result ? (
             <ResultModal result={result} />
           ) : (
             <div className="space-y-3">
               <div className="relative">
                 <Input
-                  placeholder="Digite o título do livro…"
+                  placeholder="Digite o título do livro..."
                   value={answer}
                   onChange={(e) => setAnswer(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
@@ -141,7 +141,7 @@ export function PassageCard({ challenge, mode = "today" }: Props) {
               {error && (
                 <p className="text-sm text-destructive animate-fade-in">{error}</p>
               )}
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button
                   onClick={handleSubmit}
                   disabled={loading || !answer.trim()}

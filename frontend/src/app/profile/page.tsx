@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { api } from "@/lib/api"
 import { isLoggedIn } from "@/lib/auth"
 import { getLevel, type User } from "@/types"
@@ -45,7 +46,15 @@ export default function ProfilePage() {
     }
   }
 
-
+  async function handleSimulateAdmin() {
+    setSimLoading(true)
+    try {
+      const res = await api.post("/users/me/simulate-admin")
+      setUser(res.data)
+    } finally {
+      setSimLoading(false)
+    }
+  }
 
   if (!user) {
     return (
@@ -62,24 +71,30 @@ export default function ProfilePage() {
       <h1 className="text-2xl font-bold mb-6 animate-slide-up">Perfil</h1>
 
       {/* User card */}
-      <div className="rounded-2xl border border-border/60 bg-card p-6 mb-4 animate-slide-up">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-primary/15 border border-primary/20 flex items-center justify-center">
-              <BookOpen className="w-7 h-7 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold">{user.username}</h2>
-              <p className="text-sm text-muted-foreground">{user.email}</p>
-            </div>
+      <div className="rounded-2xl border border-border/60 bg-card p-5 mb-4 animate-slide-up">
+        {/* Top row: avatar + name + badges */}
+        <div className="flex items-center gap-4 mb-4">
+          <div className="w-14 h-14 rounded-2xl bg-primary/15 border border-primary/20 flex items-center justify-center shrink-0">
+            <BookOpen className="w-7 h-7 text-primary" />
           </div>
-          <div className="flex flex-col items-end gap-1">
-            <span className={`text-sm font-semibold ${level.color}`}>{level.name}</span>
-            {user.is_premium && (
-              <Badge className="bg-primary/15 text-primary border-primary/20 text-xs gap-1">
-                <Crown className="w-3 h-3" /> Premium
-              </Badge>
-            )}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-xl font-bold truncate">{user.username}</h2>
+              <span className={`text-xs font-semibold ${level.color} shrink-0`}>{level.name}</span>
+            </div>
+            <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+            <div className="flex items-center gap-1.5 flex-wrap mt-1">
+              {user.is_premium && (
+                <Badge className="bg-primary/15 text-primary border-primary/20 text-[10px] gap-1 shrink-0">
+                  <Crown className="w-2.5 h-2.5" /> Premium
+                </Badge>
+              )}
+              {user.is_admin && (
+                <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/20 text-[10px] gap-1 shrink-0">
+                  <Shield className="w-2.5 h-2.5" /> Admin
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
 
@@ -142,7 +157,39 @@ export default function ProfilePage() {
         </div>
       )}
 
-
+      {/* Admin Test Simulation */}
+      {!user.is_admin ? (
+        <div className="rounded-2xl border border-border/60 bg-muted/40 p-5 mb-4 animate-slide-up-delay">
+          <div className="flex items-center gap-2 mb-2">
+            <Shield className="w-4 h-4 text-primary" />
+            <h3 className="font-semibold text-sm text-foreground">Modo de Teste</h3>
+          </div>
+          <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+            Promova sua conta temporariamente a administrador para gerenciar o acervo, trechos e outros usuários no Painel Admin.
+          </p>
+          <Button
+            onClick={handleSimulateAdmin}
+            disabled={simLoading}
+            className="w-full gap-2 bg-secondary hover:bg-secondary/80 border border-border"
+            size="sm"
+          >
+            {simLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
+            {simLoading ? "Ativando..." : "Ativar Admin de Teste"}
+          </Button>
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 mb-4 animate-slide-up-delay flex items-center justify-between">
+          <div className="flex items-center gap-2 text-primary text-sm font-semibold">
+            <Shield className="w-4 h-4" />
+            Administrador Ativo
+          </div>
+          <Link href="/admin">
+            <Button size="sm" className="h-8 text-xs font-semibold">
+              Painel Admin
+            </Button>
+          </Link>
+        </div>
+      )}
 
       {/* Logout */}
       <Button

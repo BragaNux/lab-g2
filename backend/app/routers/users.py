@@ -20,4 +20,15 @@ def simulate_premium(
     return current_user
 
 
+@router.post("/me/simulate-admin", response_model=UserResponse)
+def simulate_admin(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    current_user.is_admin = True
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
 
