@@ -221,22 +221,28 @@ export function PassageCard({ challenge, mode = "today" }: Props) {
               {error && (
                 <p className="text-sm text-destructive animate-fade-in">{error}</p>
               )}
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Button
-                  onClick={handleSubmit}
-                  disabled={loading || !answer.trim()}
-                  className="flex-1 h-11 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20 transition-all"
-                >
-                  Confirmar Resposta
-                </Button>
-                {!hint && challenge.allow_ai && (
+
+              {/* Confirm button — always full-width */}
+              <Button
+                onClick={handleSubmit}
+                disabled={loading || !answer.trim()}
+                className="w-full h-12 text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20 transition-all"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Confirmar Resposta
+              </Button>
+
+              {/* Hint button — below, left-aligned on mobile */}
+              {!hint && challenge.allow_ai && (
+                <div className="flex justify-end">
                   <HintButton
                     url={mode === "history" ? `/challenge/history/${challenge.id}/hint` : "/challenge/today/hint"}
                     onHintReceived={setHint}
                     disabled={loading}
                   />
-                )}
-              </div>
+                </div>
+              )}
+
               <p className="text-xs text-muted-foreground text-center">
                 Pressione Enter para confirmar
               </p>
