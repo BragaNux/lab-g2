@@ -823,45 +823,7 @@ bookguess/
 
 ---
 
-## 14. Roadmap 12 Meses
-
-### Fase 1 — MVP (meses 1–3)
-- [ ] Autenticação (register, login, JWT)
-- [ ] Desafio diário (trecho fixo, resposta aberta, fuzzy match)
-- [ ] Sistema de pontos básico (100% / 50% / 0)
-- [ ] 1 dica por LLM (sem RAG ainda — contexto fixo do livro)
-- [ ] Ranking diário (Redis sorted set)
-- [ ] 50 trechos de domínio público curados manualmente
-- [ ] Deploy Vercel + Railway
-
-### Fase 2 — Beta (meses 4–6)
-- [ ] Pipeline RAG completo (ingestão automática + busca vetorial)
-- [ ] Dicas contextuais reais via RAG + LLM
-- [ ] Streak + badges básicos
-- [ ] Ranking semanal
-- [ ] Modo exploração (histórico sem pontos)
-- [ ] Painel admin para gerenciar trechos e livros
-- [ ] 200+ trechos no catálogo
-
-### Fase 3 — Produção (meses 7–9)
-- [ ] Sistema de XP e níveis completo
-- [ ] Badges completos
-- [ ] Avaliação semântica por embeddings
-- [ ] Desafios temáticos (semanas por autor/gênero)
-- [ ] Testes automatizados (coverage > 80%)
-- [ ] Monitoramento (Sentry + logs estruturados)
-- [ ] Performance: cache agressivo, índices revisados
-
-### Fase 4 — Monetização (meses 10–12)
-- [ ] Plano premium (Stripe)
-- [ ] Dicas premium (3 por desafio)
-- [ ] Estatísticas avançadas
-- [ ] Licenciamento de primeiros livros contemporâneos
-- [ ] API pública (para parceiros/escolas)
-
----
-
-## 15. Código Inicial
+## 14. Código Inicial
 
 ### Backend — main.py
 
