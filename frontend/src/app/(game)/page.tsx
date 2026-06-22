@@ -52,8 +52,10 @@ export default function GamePage() {
       {/* Content */}
       <div className="flex-1 flex items-start justify-center px-4 py-10">
         {error ? (
-          <div className="text-center space-y-3 animate-fade-in">
-            <span className="text-4xl block">📚</span>
+          <div className="flex flex-col items-center text-center space-y-3 animate-fade-in">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-muted/30">
+              <BookOpen className="w-8 h-8 text-muted-foreground/40" />
+            </div>
             <p className="text-muted-foreground">{error}</p>
           </div>
         ) : !challenge ? (

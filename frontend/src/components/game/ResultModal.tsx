@@ -5,7 +5,7 @@ import { createPortal } from "react-dom"
 import Link from "next/link"
 import { getLevel, type SubmitResult } from "@/types"
 import { Button } from "@/components/ui/button"
-import { CheckCircle2, XCircle, BookOpen, Trophy, RotateCcw, User, Flame, Loader2, Award } from "lucide-react"
+import { CheckCircle2, XCircle, BookOpen, Trophy, RotateCcw, User, Flame, Loader2, Award, Lightbulb } from "lucide-react"
 import { api } from "@/lib/api"
 
 
@@ -346,8 +346,9 @@ export function ResultModal({ result, challengeId, allowAi, mode = "today" }: Pr
           {/* Claude Curiosities */}
           {is_correct && allowAi && (
             <div className="rounded-2xl bg-primary/5 border border-primary/10 p-4 animate-slide-up-delay space-y-2">
-              <p className="text-[10px] uppercase tracking-widest text-primary font-bold">
-                💡 Curiosidades da Obra
+              <p className="text-[10px] uppercase tracking-widest text-primary font-bold flex items-center gap-1">
+                <Lightbulb className="w-3.5 h-3.5 shrink-0" />
+                <span>Curiosidades da Obra</span>
               </p>
               {loadingCuriosities ? (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground py-2 justify-center">

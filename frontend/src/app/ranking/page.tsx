@@ -77,11 +77,19 @@ export default function RankingPage() {
     )
   }
 
-  // Reorder: we render in display order [2nd, 1st, 3rd]
-  const top3Raw = ranking.slice(0, 3)  // [1st, 2nd, 3rd]
-  // Map to podium display slots: slot 0 = 2nd, slot 1 = 1st, slot 2 = 3rd
-  const podiumSlots = [top3Raw[1], top3Raw[0], top3Raw[2]].filter(Boolean) as RankingItem[]
-  const podiumConfig = [PODIUM[1], PODIUM[0], PODIUM[2]] // silver, gold, bronze
+  // Associate each of the top 3 players with their correct config
+  const top3WithConfig = top3Raw.map((item, index) => {
+    const rank = index + 1
+    const cfg = PODIUM.find(p => p.rank === rank) || PODIUM[2]
+    return { item, cfg }
+  })
+
+  // Reorder for Olympic podium display slots: [2nd, 1st, 3rd]
+  const podiumSlots = [
+    top3WithConfig[1], // Silver (2nd)
+    top3WithConfig[0], // Gold (1st)
+    top3WithConfig[2]  // Bronze (3rd)
+  ].filter(Boolean)
 
   const rest = ranking.slice(3)
 
@@ -101,8 +109,7 @@ export default function RankingPage() {
         <div className="mb-8 animate-slide-up-delay">
           {/* Player cards — aligned to bottom of the podium blocks */}
           <div className="flex items-end justify-center gap-3 px-2">
-            {podiumSlots.map((item, slotIdx) => {
-              const cfg = podiumConfig[slotIdx]
+            {podiumSlots.map(({ item, cfg }) => {
               const isFirst = cfg.rank === 1
               return (
                 <div

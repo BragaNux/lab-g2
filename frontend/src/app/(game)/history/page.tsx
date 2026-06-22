@@ -9,7 +9,7 @@ import { getDifficultyLabel } from "@/types"
 import type { HistoryChallenge, User } from "@/types"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Clock, Lock, ChevronRight, Loader2, Crown, CheckCircle2, XCircle } from "lucide-react"
+import { Clock, Lock, ChevronRight, Loader2, Crown, CheckCircle2, XCircle, BookOpen } from "lucide-react"
 
 
 function Stars({ value, max = 5 }: { value: number; max?: number }) {
@@ -104,8 +104,10 @@ export default function HistoryPage() {
       </div>
 
       {challenges.length === 0 ? (
-        <div className="text-center py-16 animate-fade-in">
-          <span className="text-4xl block mb-3">📚</span>
+        <div className="flex flex-col items-center text-center py-16 animate-fade-in space-y-3">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-muted/30">
+            <BookOpen className="w-8 h-8 text-muted-foreground/40" />
+          </div>
           <p className="text-muted-foreground">Nenhum desafio anterior disponível ainda.</p>
         </div>
       ) : (

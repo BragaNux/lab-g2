@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { HintButton } from "./HintButton"
 import { ResultModal } from "./ResultModal"
-import { Loader2, RotateCcw } from "lucide-react"
+import { Loader2, RotateCcw, Lightbulb } from "lucide-react"
 
 
 interface Props {
@@ -185,7 +185,7 @@ export function PassageCard({ challenge, mode = "today" }: Props) {
         {hint && (
           <div className="mx-6 mb-4 rounded-xl bg-primary/8 border border-primary/20 p-4 animate-scale-in">
             <div className="flex gap-2 items-start">
-              <span className="text-lg mt-0.5">💡</span>
+              <Lightbulb className="w-5 h-5 text-primary mt-0.5 shrink-0 animate-pulse" />
               <div className="flex-1 min-w-0">
                 {!hint.trim().startsWith("#") && (
                   <p className="text-sm font-semibold text-primary mb-1">Dica</p>

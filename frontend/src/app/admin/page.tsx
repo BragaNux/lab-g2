@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Shield, Brain, Crown, Award, BookPlus, FileText, CalendarPlus, Users, RefreshCw, Flame, Trash2, CheckCircle2, XCircle } from "lucide-react"
+import { Loader2, Shield, Brain, Crown, Award, BookPlus, FileText, CalendarPlus, Users, RefreshCw, Flame, Trash2, CheckCircle2, XCircle, Calendar, History, BookOpen, Library } from "lucide-react"
 import type { User } from "@/types"
 
 
@@ -241,11 +241,11 @@ export default function AdminPage() {
 }
 
 /* ───── Shared panel wrapper ───── */
-function Panel({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
+function Panel({ title, description, children }: { title: React.ReactNode; description: string; children: React.ReactNode }) {
   return (
     <div className="rounded-2xl border border-border/50 bg-card shadow-sm">
       <div className="px-6 py-5 border-b border-border/40">
-        <h2 className="text-base font-semibold">{title}</h2>
+        <h2 className="text-base font-semibold flex items-center gap-2">{title}</h2>
         <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
       </div>
       <div className="p-6">{children}</div>
@@ -279,7 +279,7 @@ function IngestForm({ onNotify }: { onNotify: (msg: string, type?: "success" | "
   }
 
   return (
-    <Panel title="Ingerir Livro" description="Envie um arquivo PDF ou TXT. O sistema divide o livro em chunks e gera os embeddings automaticamente.">
+    <Panel title={<span className="flex items-center gap-2"><BookPlus className="w-5 h-5 text-primary" /><span>Ingerir Livro</span></span>} description="Envie um arquivo PDF ou TXT. O sistema divide o livro em chunks e gera os embeddings automaticamente.">
       <form onSubmit={handleSubmit} className="space-y-4 max-w-2xl">
         <div className="space-y-1">
           <span className="text-xs text-muted-foreground block font-medium">Arquivo (.txt ou .pdf)</span>
@@ -327,7 +327,7 @@ function PassageForm({ onNotify }: { onNotify: (msg: string, type?: "success" | 
   }
 
   return (
-    <Panel title="Criar Trecho Literário" description="Cadastre um novo trecho de um livro para ser utilizado como desafio diário.">
+    <Panel title={<span className="flex items-center gap-2"><FileText className="w-5 h-5 text-primary" /><span>Criar Trecho Literário</span></span>} description="Cadastre um novo trecho de um livro para ser utilizado como desafio diário.">
       <form onSubmit={handleSubmit} className="space-y-4 max-w-2xl">
         <Input placeholder="ID do livro (UUID)" value={fields.book_id} onChange={(e) => set("book_id", e.target.value)} required />
         <div className="space-y-1">
@@ -391,7 +391,7 @@ function ChallengeForm({ onNotify }: { onNotify: (msg: string, type?: "success" 
   }
 
   return (
-    <Panel title="Criar Desafio Diário" description="Vincule um trecho já cadastrado a uma data específica para virar o desafio do dia.">
+    <Panel title={<span className="flex items-center gap-2"><CalendarPlus className="w-5 h-5 text-primary" /><span>Criar Desafio Diário</span></span>} description="Vincule um trecho já cadastrado a uma data específica para virar o desafio do dia.">
       <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
         <Input placeholder="ID do trecho (UUID)" value={fields.passage_id} onChange={(e) => set("passage_id", e.target.value)} required />
         <div className="space-y-1">
@@ -438,7 +438,7 @@ function ResetTodayBox({
   async function handleResetByEra(era: "modern" | "classic") {
     const eraLabel = era === "modern" ? "literatura moderna (pós 1980)" : "literatura clássica (pré 1980)"
     onConfirmRequest({
-      title: `Hoje: ${era === "modern" ? "Literatura Moderna 📚" : "Literatura Clássica 🏛️"}`,
+      title: `Hoje: ${era === "modern" ? "Literatura Moderna" : "Literatura Clássica"}`,
       message: `O desafio de HOJE será trocado por um trecho de ${eraLabel}. As tentativas de hoje serão apagadas e o XP descontado.`,
       isDestructive: true,
       onConfirm: async () => {
@@ -456,7 +456,7 @@ function ResetTodayBox({
   const isAnyLoading = loading || loadingEra !== null
 
   return (
-    <Panel title="🗓️ Resetar Desafio de HOJE" description="Apaga tentativas de hoje, subtrai XP e ofensiva. Sorteia novo trecho — aleatório, moderno ou clássico.">
+    <Panel title={<span className="flex items-center gap-2"><Calendar className="w-5 h-5 text-primary animate-pulse" /><span>Resetar Desafio de HOJE</span></span>} description="Apaga tentativas de hoje, subtrai XP e ofensiva. Sorteia novo trecho — aleatório, moderno ou clássico.">
       <div className="space-y-2.5 max-w-sm">
         <Button onClick={handleReset} disabled={isAnyLoading} variant="destructive"
           className="w-full h-10 gap-2 text-sm">
@@ -466,12 +466,12 @@ function ResetTodayBox({
         <div className="grid grid-cols-2 gap-2">
           <Button onClick={() => handleResetByEra("modern")} disabled={isAnyLoading}
             className="h-10 gap-1.5 text-sm bg-violet-600 hover:bg-violet-700 text-white border-0">
-            {loadingEra === "modern" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <span>📚</span>}
+            {loadingEra === "modern" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BookOpen className="w-3.5 h-3.5" />}
             Modernos
           </Button>
           <Button onClick={() => handleResetByEra("classic")} disabled={isAnyLoading}
             className="h-10 gap-1.5 text-sm bg-amber-600 hover:bg-amber-700 text-white border-0">
-            {loadingEra === "classic" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <span>🏛️</span>}
+            {loadingEra === "classic" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Library className="w-3.5 h-3.5" />}
             Clássicos
           </Button>
         </div>
@@ -514,7 +514,7 @@ function ResetHistoryBox({
 
   return (
     <Panel
-      title="📜 Resetar Histórico por Era"
+      title={<span className="flex items-center gap-2"><History className="w-5 h-5 text-primary" /><span>Resetar Histórico por Era</span></span>}
       description="Substitui os trechos dos desafios históricos (dias passados) para literatura moderna ou clássica. Útil para testar a tela de histórico com desafios específicos. Não afeta XP nem ofensiva."
     >
       <div className="space-y-4">
@@ -547,7 +547,7 @@ function ResetHistoryBox({
             className="relative group flex flex-col items-start gap-1 p-4 rounded-xl border-2 border-violet-500/30 bg-violet-500/5 hover:border-violet-500/60 hover:bg-violet-500/10 transition-all disabled:opacity-50 text-left"
           >
             <div className="flex items-center gap-2">
-              {loadingEra === "modern" ? <Loader2 className="w-4 h-4 animate-spin text-violet-400" /> : <span className="text-lg">📚</span>}
+              {loadingEra === "modern" ? <Loader2 className="w-4 h-4 animate-spin text-violet-400" /> : <BookOpen className="w-4 h-4 text-violet-400" />}
               <span className="font-semibold text-sm text-violet-300">Literatura Moderna</span>
             </div>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
@@ -562,7 +562,7 @@ function ResetHistoryBox({
             className="relative group flex flex-col items-start gap-1 p-4 rounded-xl border-2 border-amber-500/30 bg-amber-500/5 hover:border-amber-500/60 hover:bg-amber-500/10 transition-all disabled:opacity-50 text-left"
           >
             <div className="flex items-center gap-2">
-              {loadingEra === "classic" ? <Loader2 className="w-4 h-4 animate-spin text-amber-400" /> : <span className="text-lg">🏛️</span>}
+              {loadingEra === "classic" ? <Loader2 className="w-4 h-4 animate-spin text-amber-400" /> : <Library className="w-4 h-4 text-amber-400" />}
               <span className="font-semibold text-sm text-amber-300">Literatura Clássica</span>
             </div>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
@@ -697,7 +697,7 @@ function UsersManagement({
 
   return (
     <Panel
-      title="Gerenciar Usuários"
+      title={<span className="flex items-center gap-2"><Users className="w-5 h-5 text-primary" /><span>Gerenciar Usuários</span></span>}
       description="Controle as permissões de cada usuário: acesso à IA, status premium e privilégios de administrador."
     >
       {/* Search + refresh + reset all */}
