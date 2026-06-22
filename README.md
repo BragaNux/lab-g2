@@ -6,7 +6,7 @@ Este guia serve como documentação de produção e suporte visual de leitura r�
 
 ## 📌 Guia de Consulta Rápida (Para ler durante a apresentação)
 
-| Pergunta da Banca / Dúvida | O que responder diretamente |
+| Pergunta / Dúvida | O que responder diretamente |
 | :--- | :--- |
 | **O que é o BookGuess?** | Um jogo diário de adivinhação de obras literárias (estilo *Wordle*) integrado com Inteligência Artificial para dicas. |
 | **Por que usar Next.js no Frontend?** | **Segurança.** Permite renderização no servidor (SSR). Isso impede que a resposta correta fique visível inspecionando o código do navegador antes de responder. |
